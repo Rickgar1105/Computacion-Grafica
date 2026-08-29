@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compilar OpenGL",
+            "type": "shell",
+            "command": "clang++",
+            "args": [
+                "${workspaceFolder}/main.cpp",
+                "-std=c++17",
+                "-o",
+                "${workspaceFolder}/main",
+                "-I/opt/homebrew/include",
+                "-L/opt/homebrew/lib",
+                "-lglfw",
+                "-lGLEW",
+                "-framework",
+                "OpenGL"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
