@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compilar practica3",
+            "type": "shell",
+            "command": "clang++",
+            "args": [
+                "-std=c++17",
+                "-I/opt/homebrew/opt/glew/include/GL",
+                "-I/opt/homebrew/opt/glfw/include/GLFW",
+                "-I/opt/homebrew/opt/glm/include/glm",
+                "${workspaceFolder}/practica3.cpp",
+                "${workspaceFolder}/Camera.cpp",
+                "${workspaceFolder}/Mesh.cpp",
+                "${workspaceFolder}/Shader.cpp",
+                "${workspaceFolder}/Sphere.cpp",
+                "${workspaceFolder}/Window.cpp",
+                "-L/opt/homebrew/opt/glew/lib",
+                "-lGLEW",
+                "-L/opt/homebrew/opt/glfw/lib",
+                "-lglfw",
+                "-framework", "OpenGL",
+                "-framework", "Cocoa",
+                "-framework", "IOKit",
+                "-framework", "CoreVideo",
+                "-o", "${workspaceFolder}/practica3"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Ejecutar practica3",
+            "type": "shell",
+            "command": "${workspaceFolder}/practica3",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "Compilar practica3",
+            "problemMatcher": []
+        }
+    ]
+}
