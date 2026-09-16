@@ -1,0 +1,10 @@
+# Carpeta de compilación (CMake)
+build/
+
+# Archivos del sistema
+.DS_Store
+
+# Objetos y binarios
+*.o
+*.obj
+*.out
