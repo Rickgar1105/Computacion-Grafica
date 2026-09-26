@@ -1,0 +1,12 @@
+# Blender 5.2.2 LTS MTL File: 'Rover_Jerarquia_Corregida.blend'
+# www.blender.org
+
+newmtl SpacialRoverExploreralumArm.001
+Ns 90.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 3
+map_Kd /Users/ricardo.galicia/Downloads/Practica5/Models/D:/proyectos VS/VS2026/CGEIHCx64/Practica5/Models/SpacialRoverT301Texture.png
