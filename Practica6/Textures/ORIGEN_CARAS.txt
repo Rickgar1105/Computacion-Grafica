@@ -1,0 +1,6 @@
+cara_1.png = pngtree-the-star-wars-saber-symbol-logo-vector-png-image_15639336.png
+cara_2.png = pngtree-star-wars-emblem-featuring-an-industrial-logo-vector-png-image_6972349.png
+cara_3.png = il_fullxfull.3808946890_pyae.jpg.webp
+cara_4.png = il_fullxfull.769667001_sdf0.jpg
+cara_5.png = rebel-symbol.jpg
+cara_6.png = TheRepublicEmblemDuringTheSithEmpiresReturn_400.png

@@ -1,0 +1,5 @@
+OpenGL 4.1 Metal - 91.7 / GLSL 4.10
+Captura captura_1.ppm 2732x1536; error OpenGL: 0
+Captura captura_2.ppm 2732x1536; error OpenGL: 0
+Captura captura_3.ppm 2732x1536; error OpenGL: 0
+Captura captura_4.ppm 2732x1536; error OpenGL: 0
