@@ -1,0 +1,5 @@
+.DS_Store
+build/
+*.blend1
+captura_*.ppm
+registro.txt
