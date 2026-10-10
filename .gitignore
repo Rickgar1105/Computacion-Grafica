@@ -1,0 +1,9 @@
+# Carpeta de compilación (CMake)
+build/
+
+# Archivos del sistema
+.DS_Store
+
+# Objetos compilados (los .obj de Models sí se suben: son los modelos 3D)
+*.o
+*.out

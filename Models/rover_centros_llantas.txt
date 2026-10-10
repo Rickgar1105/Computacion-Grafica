@@ -1,0 +1,6 @@
+Delantera_Derecha 5.7099 1.7050 -3.0700
+Delantera_Izquierda 5.7124 1.7050 3.0700
+Media_Derecha -0.9472 1.4121 -4.1589
+Media_Izquierda -0.9447 1.4121 4.1589
+Trasera_Derecha -5.1134 1.3858 -4.1589
+Trasera_Izquierda -5.1305 1.4121 4.1589

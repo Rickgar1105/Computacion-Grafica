@@ -1,0 +1,111 @@
+newmtl verde6
+Kd 1 1 1
+map_Kd ../Textures/color_0c3d1c.png
+
+newmtl verde7
+Kd 1 1 1
+map_Kd ../Textures/color_0e4720.png
+
+newmtl verde9
+Kd 1 1 1
+map_Kd ../Textures/color_125c29.png
+
+newmtl verde8
+Kd 1 1 1
+map_Kd ../Textures/color_105225.png
+
+newmtl verde10
+Kd 1 1 1
+map_Kd ../Textures/color_14662e.png
+
+newmtl cara8
+Kd 0.8 0.8 0.8
+map_Kd ../Textures/cara.png
+
+newmtl cara7
+Kd 0.7 0.7 0.7
+map_Kd ../Textures/cara.png
+
+newmtl cara6
+Kd 0.6 0.6 0.6
+map_Kd ../Textures/cara.png
+
+newmtl cara9
+Kd 0.9 0.9 0.9
+map_Kd ../Textures/cara.png
+
+newmtl cara10
+Kd 1.0 1.0 1.0
+map_Kd ../Textures/cara.png
+
+newmtl logo9
+Kd 0.9 0.9 0.9
+map_Kd ../Textures/llamas.png
+
+newmtl logo8
+Kd 0.8 0.8 0.8
+map_Kd ../Textures/llamas.png
+
+newmtl logo7
+Kd 0.7 0.7 0.7
+map_Kd ../Textures/llamas.png
+
+newmtl logo10
+Kd 1.0 1.0 1.0
+map_Kd ../Textures/llamas.png
+
+newmtl vidrio7
+Kd 1 1 1
+map_Kd ../Textures/color_0b191b.png
+
+newmtl vidrio6
+Kd 1 1 1
+map_Kd ../Textures/color_091517.png
+
+newmtl ojos9
+Kd 0.9 0.9 0.9
+map_Kd ../Textures/ojos.png
+
+newmtl vidrio9
+Kd 1 1 1
+map_Kd ../Textures/color_0e2022.png
+
+newmtl vidrio8
+Kd 1 1 1
+map_Kd ../Textures/color_0c1d1f.png
+
+newmtl ojos8
+Kd 0.8 0.8 0.8
+map_Kd ../Textures/ojos.png
+
+newmtl ojos7
+Kd 0.7 0.7 0.7
+map_Kd ../Textures/ojos.png
+
+newmtl ojos6
+Kd 0.6 0.6 0.6
+map_Kd ../Textures/ojos.png
+
+newmtl ojos10
+Kd 1.0 1.0 1.0
+map_Kd ../Textures/ojos.png
+
+newmtl helice6
+Kd 1 1 1
+map_Kd ../Textures/color_121514.png
+
+newmtl helice7
+Kd 1 1 1
+map_Kd ../Textures/color_151917.png
+
+newmtl helice8
+Kd 1 1 1
+map_Kd ../Textures/color_181d1b.png
+
+newmtl helice9
+Kd 1 1 1
+map_Kd ../Textures/color_1c201e.png
+
+newmtl helice10
+Kd 1 1 1
+map_Kd ../Textures/color_1f2421.png

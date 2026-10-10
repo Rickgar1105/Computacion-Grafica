@@ -1,0 +1,43 @@
+# archivo  opciones   (H = holocron en -11.5 6 6, D = dado en -5.5 6 6)
+g_general.ppm --linterna 0 --camara 0 10 30 -90 -20
+e_dh_conjunto.ppm --linterna 0 --camara -8.5 7.5 15 -90 -10
+e_dh_conjunto_linterna.ppm --camara -8.5 6.3 13 -90 0
+e_h_frente.ppm --camara -11.5 6.3 10.5 -90 0
+e_h_derecha.ppm --camara -7.0 6.3 6 180 0
+e_h_atras.ppm --camara -11.5 6.3 1.5 90 0
+e_h_izquierda.ppm --camara -16 6.3 6 0 0
+e_h_arriba.ppm --camara -11.5 10.5 6.001 -90 -89
+e_h_abajo.ppm --camara -11.5 1.6 6.001 -90 89
+e_h_esquina.ppm --camara -8.3 8.6 9.2 -135 -30
+e_h_esquina2.ppm --camara -14.7 3.4 2.8 45 30
+e_d_frente.ppm --camara -5.5 6.3 10.5 -90 0
+e_d_derecha.ppm --camara -1.0 6.3 6 180 0
+e_d_atras.ppm --camara -5.5 6.3 1.5 90 0
+e_d_izquierda.ppm --camara -10 6.3 6 0 0
+e_d_arriba.ppm --camara -5.5 10.5 6.001 -90 -89
+e_d_abajo.ppm --camara -5.5 1.6 6.001 -90 89
+e_d_esquina.ppm --camara -2.3 8.6 9.2 -135 -30
+e_d_esquina2.ppm --camara -8.7 3.4 2.8 45 30
+r_rover1.ppm --linterna 0 --camara 3 3.5 17 -90 -12
+r_rover2.ppm --linterna 0 --rover -8 --camara -6 3.5 17 -90 -12
+r_rover_lampara.ppm --linterna 0 --rover -14 --camara -13 4 18 -90 -12
+r_llantas1.ppm --linterna 0 --rover 1 --camara 2.2 0.4 11.5 -90 -6
+r_llantas2.ppm --linterna 0 --rover 1.35 --camara 2.2 0.4 11.5 -90 -6
+r_avion_cerca.ppm --linterna 0 --camara 18.5 3 3 -128 -6
+r_avion1.ppm --linterna 0 --camara 22 4 9 -125 0
+r_avion_sube.ppm --linterna 0 --avion 10 --camara 22 4 9 -125 0
+r_avion_baja.ppm --linterna 0 --avion 2.5 --camara 22 4 9 -125 0
+p_puntual_profesor.ppm --linterna 0 --rover 14 --camara -6 4 9.5 -90 -25
+p_puntual_sin.ppm --linterna 0 --rover 14 --puntual 1 0 0 --camara -6 4 9.5 -90 -25
+p_puntual_con3.ppm --linterna 0 --rover 14 --puntual 3 0 0 --camara -6 4 9.5 -90 -25
+p_puntual_con01.ppm --linterna 0 --rover 14 --puntual 0.1 0 0 --camara -6 4 9.5 -90 -25
+p_puntual_lin.ppm --linterna 0 --rover 14 --puntual 1 0.5 0 --camara -6 4 9.5 -90 -25
+p_puntual_exp.ppm --linterna 0 --rover 14 --puntual 1 0 0.5 --camara -6 4 9.5 -90 -25
+p_spot_profesor.ppm --linterna 0 --rover -14 --camara 5 4 6 -100 -40
+p_spot_lin.ppm --linterna 0 --rover -14 --spot 1 0.2 0 --camara 5 4 6 -100 -40
+p_spot_exp.ppm --linterna 0 --rover -14 --spot 1 0 0.03 --camara 5 4 6 -100 -40
+p_spot_con3.ppm --linterna 0 --rover -14 --spot 3 0 0 --camara 5 4 6 -100 -40
+p_spot_con02.ppm --linterna 0 --rover -14 --spot 0.2 0 0 --camara 5 4 6 -100 -40
+r_faroavion1.ppm --linterna 0 --avion 5 --avionz -10 --camara 30 7 -2 180 -14
+r_faroavion2.ppm --linterna 0 --avion 5 --avionz 4 --camara 30 7 -2 180 -14
+r_faroavion_frente.ppm --linterna 0 --avion 5 --avionz -6 --camara 13 9 -22 90 -18

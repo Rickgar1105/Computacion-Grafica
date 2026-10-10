@@ -1,0 +1,27 @@
+newmtl Borde
+Kd 1 1 1
+map_Kd ../Textures/color_2e3b45.png
+
+newmtl Cara_1
+Kd 1 1 1
+map_Kd ../Textures/cara_1.png
+
+newmtl Cara_2
+Kd 1 1 1
+map_Kd ../Textures/cara_2.png
+
+newmtl Cara_3
+Kd 1 1 1
+map_Kd ../Textures/cara_3.png
+
+newmtl Cara_4
+Kd 1 1 1
+map_Kd ../Textures/cara_4.png
+
+newmtl Cara_5
+Kd 1 1 1
+map_Kd ../Textures/cara_5.png
+
+newmtl Cara_6
+Kd 1 1 1
+map_Kd ../Textures/cara_6.png
