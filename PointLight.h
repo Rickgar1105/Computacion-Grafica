@@ -15,6 +15,9 @@ public:
 		GLfloat diffuseIntensityLocation, GLfloat positionLocation,
 		GLfloat constantLocation, GLfloat linearLocation, GLfloat exponentLocation);
 
+	//mueve la luz junto con el modelo al que está unida (práctica 8: pinza del rover)
+	void SetPos(glm::vec3 pos);
+
 	~PointLight();
 
 protected:

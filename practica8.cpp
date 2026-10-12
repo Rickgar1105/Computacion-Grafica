@@ -1,21 +1,21 @@
 /*
-Práctica 7: Iluminación 1
+Práctica 8: Iluminación 2
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
-Sobre la escena del profesor se agregó:
-- Dado de la práctica 6 (ejercicio de clase) y holocrón de la práctica 6, ambos creados por código,
-  con la normal de cada cara hacia el interior para que todas se iluminen bien vistas desde fuera.
-- Rover de la práctica 5 que avanza y retrocede con Y/U y lleva un faro spotlight azul en el frente.
-  Jerarquía: cuerpo -> pata -> llanta; las llantas se separaron de las patas en Blender y giran
-  según la distancia que avanza el rover.
-- Avión de la práctica 6 con una spotlight amarilla en la parte inferior; sube y baja con las flechas.
-- Lámpara importada con luz puntual blanca.
+Se parte del código de la práctica 7 (rover, avión, holocrón, dado y lámpara con sus luces) y se agregó:
+- C: la luz del avión que apunta hacia el suelo cambia de color en el orden
+  rojo, amarillo, verde, cian, azul, magenta (y vuelve a rojo).
+- Luz puntual azul claro unida al holocrón importado; K la enciende o la apaga.
+- Luz puntual verde en el punto extremo de la pinza del rover; se mueve con el rover y P la enciende o la apaga.
 
 Controles:
 	W A S D + ratón		cámara
 	Y / U				rover hacia adelante / hacia atrás
 	Flecha arriba / abajo	el avión sube / baja
 	H / J				el avión avanza / retrocede
+	C					siguiente color de la luz inferior del avión
+	K					enciende o apaga la luz del holocrón
+	P					enciende o apaga la luz de la pinza del rover
 	L					enciende o apaga la linterna de la cámara
 	Esc					cerrar
 */
@@ -145,6 +145,26 @@ float posAvionY = ALTURA_INICIAL_AVION;	//flecha arriba: sube, flecha abajo: baj
 const float INICIO_AVION_Z = -4.0f;
 float posAvionZ = INICIO_AVION_Z;		//H: avanza hacia +Z (donde está su hélice), J: retrocede
 bool linternaEncendida = true;
+
+//Práctica 8
+//Colores de la luz inferior del avión, en el orden en que se recorren con C
+const glm::vec3 COLORES_LUZ_AVION[6] = {
+	glm::vec3(1.0f, 0.0f, 0.0f),	//rojo
+	glm::vec3(1.0f, 1.0f, 0.0f),	//amarillo
+	glm::vec3(0.0f, 1.0f, 0.0f),	//verde
+	glm::vec3(0.0f, 1.0f, 1.0f),	//cian
+	glm::vec3(0.0f, 0.0f, 1.0f),	//azul
+	glm::vec3(1.0f, 0.0f, 1.0f)		//magenta
+};
+const int COLOR_INICIAL_AVION = 1;	//amarillo, el color que tenía en la práctica 7
+int colorLuzAvion = COLOR_INICIAL_AVION;
+bool luzHolocronEncendida = true;
+bool luzPinzaEncendida = true;
+//El holocrón importado es un cubo de lado 2 con centro en su origen
+const glm::vec3 POS_HOLOCRON_IMPORTADO(-6.0f, 0.0f, -1.5f);
+//Punto extremo de la pinza en coordenadas del rover (sin escala). La pinza viene en Cuerpo.obj,
+//arriba del brazo; su vértice más alejado está en (2.38, 12.44, -0.94) y la luz se pone un poco afuera
+const glm::vec3 PUNTA_PINZA(2.45f, 12.55f, -0.95f);
 
 // Vertex Shader
 static const char* vShader = "shaders/shader_light.vert";
@@ -364,7 +384,8 @@ void CrearHolocron() //holocrón de la práctica 6: seis caras independientes, c
 //Capturas para el reporte. Con --capturas lista.txt el programa recorre la lista dentro de
 //la misma ventana (una línea por captura: archivo.ppm y opciones) y luego sigue normal.
 //Opciones: --camara x y z yaw pitch, --rover x, --avion y, --linterna 0|1,
-//          --puntual con lin exp (luz roja), --spot con lin exp (luz verde fija)
+//          --puntual con lin exp (luz roja), --spot con lin exp (luz verde fija),
+//          --color 0..5 (luz del avión), --holocron 0|1, --pinza 0|1
 //------------------------------------------------------------------
 struct Captura
 {
@@ -384,6 +405,9 @@ void RestaurarEscena()
 	linternaEncendida = true;
 	pointLights[0] = luzRojaInicial;
 	spotLights[1] = luzVerdeInicial;
+	colorLuzAvion = COLOR_INICIAL_AVION;
+	luzHolocronEncendida = true;
+	luzPinzaEncendida = true;
 }
 
 void AplicarOpciones(const std::vector<std::string>& op)
@@ -400,6 +424,9 @@ void AplicarOpciones(const std::vector<std::string>& op)
 		else if (op[i] == "--avion" && i + 1 < op.size()) posAvionY = num(++i);
 		else if (op[i] == "--avionz" && i + 1 < op.size()) posAvionZ = num(++i);
 		else if (op[i] == "--linterna" && i + 1 < op.size()) linternaEncendida = num(++i) != 0.0f;
+		else if (op[i] == "--color" && i + 1 < op.size()) colorLuzAvion = (int)num(++i) % 6;
+		else if (op[i] == "--holocron" && i + 1 < op.size()) luzHolocronEncendida = num(++i) != 0.0f;
+		else if (op[i] == "--pinza" && i + 1 < op.size()) luzPinzaEncendida = num(++i) != 0.0f;
 		else if (op[i] == "--puntual" && i + 3 < op.size())
 		{
 			pointLights[0] = PointLight(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, -6.0f, 1.5f, 1.5f, num(i + 1), num(i + 2), num(i + 3));
@@ -554,6 +581,21 @@ int main(int argc, char** argv)
 		1.0f, 0.09f, 0.02f);
 	pointLightCount++;
 
+	//luz del holocrón importado: azul claro, justo encima de su cara superior.
+	//Dentro del cubo no iluminaría al holocrón, porque sus caras quedarían de espaldas a la luz
+	pointLights[2] = PointLight(0.3f, 0.6f, 1.0f,
+		0.0f, 1.0f,
+		POS_HOLOCRON_IMPORTADO.x, POS_HOLOCRON_IMPORTADO.y + 1.5f, POS_HOLOCRON_IMPORTADO.z,
+		1.0f, 0.09f, 0.032f);
+	pointLightCount++;
+
+	//luz de la pinza del rover: verde; su posición se actualiza en cada cuadro con la del rover
+	pointLights[3] = PointLight(0.0f, 1.0f, 0.0f,
+		0.0f, 2.0f,
+		0.0f, 0.0f, 0.0f,
+		1.0f, 0.09f, 0.032f);
+	pointLightCount++;
+
 	unsigned int spotLightCount = 0;
 	//linterna: el cono se abrió de 5° a 12° para que ilumine una cara completa del dado o del holocrón
 	spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f,
@@ -624,6 +666,7 @@ int main(int argc, char** argv)
 		AplicarOpciones(capturas[0].opciones);
 	}
 	bool teclaLAnterior = false;
+	bool teclaCAnterior = false, teclaKAnterior = false, teclaPAnterior = false;
 
 	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0,
 		uniformSpecularIntensity = 0, uniformShininess = 0;
@@ -661,6 +704,14 @@ int main(int argc, char** argv)
 			//L enciende o apaga la linterna (solo al presionar, no mientras se mantiene)
 			if (keys[GLFW_KEY_L] && !teclaLAnterior) linternaEncendida = !linternaEncendida;
 			teclaLAnterior = keys[GLFW_KEY_L];
+			//C: siguiente color de la luz inferior del avión
+			if (keys[GLFW_KEY_C] && !teclaCAnterior) colorLuzAvion = (colorLuzAvion + 1) % 6;
+			teclaCAnterior = keys[GLFW_KEY_C];
+			//K: luz del holocrón, P: luz de la pinza del rover
+			if (keys[GLFW_KEY_K] && !teclaKAnterior) luzHolocronEncendida = !luzHolocronEncendida;
+			teclaKAnterior = keys[GLFW_KEY_K];
+			if (keys[GLFW_KEY_P] && !teclaPAnterior) luzPinzaEncendida = !luzPinzaEncendida;
+			teclaPAnterior = keys[GLFW_KEY_P];
 		}
 
 		// Clear the window
@@ -695,18 +746,29 @@ int main(int argc, char** argv)
 		baseRover = glm::scale(baseRover, glm::vec3(ESCALA_ROVER, ESCALA_ROVER, ESCALA_ROVER));
 		glm::vec3 posFaroRover = glm::vec3(baseRover * glm::vec4(6.9f, 2.3f, 0.0f, 1.0f));	//frente del cuerpo
 		spotLights[3].SetPos(posFaroRover);
+		glm::vec3 posLuzPinza = glm::vec3(baseRover * glm::vec4(PUNTA_PINZA, 1.0f));
+		pointLights[3].SetPos(posLuzPinza);
 
 		glm::mat4 baseAvion(1.0);
 		baseAvion = glm::translate(baseAvion, glm::vec3(13.0f, posAvionY, posAvionZ));
 		baseAvion = glm::scale(baseAvion, glm::vec3(0.75f, 0.75f, 0.75f));
 		glm::vec3 posLuzAvion = glm::vec3(baseAvion * glm::vec4(0.0f, -1.05f, 0.5f, 1.0f));	//debajo del fuselaje
 		spotLights[2].SetPos(posLuzAvion);
+		spotLights[2].SetColor(COLORES_LUZ_AVION[colorLuzAvion]);
 		glm::vec3 posFaroAvion = glm::vec3(baseAvion * glm::vec4(0.0f, 0.0f, 3.4f, 1.0f));	//delante de la hélice
 		spotLights[4].SetPos(posFaroAvion);
 
 		//información al shader de fuentes de iluminación
 		shaderList[0].SetDirectionalLight(&mainLight);
-		shaderList[0].SetPointLights(pointLights, pointLightCount);
+		//Solo se envían las luces puntuales encendidas: el shader recorre las primeras pointLightCount
+		//del arreglo, así que se arma uno nuevo sin las que estén apagadas
+		PointLight puntualesEncendidas[MAX_POINT_LIGHTS];
+		unsigned int numPuntuales = 0;
+		puntualesEncendidas[numPuntuales++] = pointLights[0];	//roja
+		puntualesEncendidas[numPuntuales++] = pointLights[1];	//lámpara
+		if (luzHolocronEncendida) puntualesEncendidas[numPuntuales++] = pointLights[2];
+		if (luzPinzaEncendida) puntualesEncendidas[numPuntuales++] = pointLights[3];
+		shaderList[0].SetPointLights(puntualesEncendidas, numPuntuales);
 		//si la linterna está apagada se envía el arreglo a partir de la segunda luz
 		if (linternaEncendida)
 			shaderList[0].SetSpotLights(spotLights, spotLightCount);
@@ -775,9 +837,9 @@ int main(int argc, char** argv)
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		Lampara_M.RenderModel(uniformColor);
 
-		//Holocrón importado de la práctica 6, junto a la luz puntual roja
+		//Holocrón importado de la práctica 6, junto a la luz puntual roja y con su luz azul claro
 		model = glm::mat4(1.0);
-		model = glm::translate(model, glm::vec3(-6.0f, 0.0f, -1.5f));
+		model = glm::translate(model, POS_HOLOCRON_IMPORTADO);
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		HolocronImportado_M.RenderModel(uniformColor);
