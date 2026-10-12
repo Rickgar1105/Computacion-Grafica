@@ -1,14 +1,15 @@
 /*
-Práctica 8: Iluminación 2
+Ejercicio de Práctica 8: Iluminación 2
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
 Se parte del código de la práctica 7 (rover, avión, dado y lámpara con sus luces). En la escena quedan un solo
-dado (el de la práctica 6, por código) y el holocrón Jedi importado, que reemplaza a los dos holocrones anteriores.
+dado (el de la práctica 6, por código) y el holocrón Jedi, que reemplaza a los dos holocrones anteriores.
 Se agregó:
 - C: la luz del avión que apunta hacia el suelo cambia de color en el orden
   rojo, amarillo, verde, cian, azul, magenta (y vuelve a rojo).
-- Holocrón Jedi optimizado (cubo de 24 vértices con una sola textura), gira y flota solo y se mueve con las flechas
-  izquierda / derecha; lleva unida una luz puntual azul claro que K enciende o apaga.
+- Holocrón Jedi armado con 8 esquinas y un núcleo, todos con la misma textura. Las esquinas se separan y giran
+  sobre su diagonal (se abre y se cierra), el holocrón gira en dos ejes para que se vean sus seis caras, flota,
+  y se mueve con las flechas izquierda / derecha. Lleva unida una luz puntual azul claro que K enciende o apaga.
 - Luz puntual verde en el punto extremo de la pinza del rover; se mueve con el rover y P la enciende o la apaga.
 
 Controles:
@@ -85,8 +86,9 @@ Model Cuerpo_M;
 Model Brazo_M;
 Model Pata_M[6];
 Model Llanta_M[6];
-//Holocrón Jedi importado (práctica 8) y avión de la práctica 6
-Model HolocronImportado_M;
+//Holocrón Jedi (práctica 8): una esquina que se dibuja ocho veces y el núcleo; avión de la práctica 6
+Model HolocronEsquina_M;
+Model HolocronNucleo_M;
 Model Avion_M;
 //Lámpara de calle
 Model Lampara_M;
@@ -148,7 +150,7 @@ const float INICIO_AVION_Z = -4.0f;
 float posAvionZ = INICIO_AVION_Z;		//H: avanza hacia +Z (donde está su hélice), J: retrocede
 bool linternaEncendida = true;
 
-//Práctica 8
+//Ejercicio de práctica 8
 //Colores de la luz inferior del avión, en el orden en que se recorren con C
 const glm::vec3 COLORES_LUZ_AVION[6] = {
 	glm::vec3(1.0f, 0.0f, 0.0f),	//rojo
@@ -162,13 +164,16 @@ const int COLOR_INICIAL_AVION = 1;	//amarillo, el color que tenía en la prácti
 int colorLuzAvion = COLOR_INICIAL_AVION;
 bool luzHolocronEncendida = true;
 bool luzPinzaEncendida = true;
-//Holocrón Jedi: cubo de lado 2 con centro en su origen. Las flechas izquierda / derecha lo mueven en X;
-//además gira sobre su eje Y y sube y baja un poco, como si flotara
+//Holocrón Jedi: cubo de lado 2 con centro en su origen, armado con 8 esquinas y un núcleo.
+//Las flechas izquierda / derecha lo mueven en X; además gira, flota y sus esquinas se abren y se cierran
 const glm::vec3 INICIO_HOLOCRON(-6.0f, 0.8f, -1.5f);
 const float VELOCIDAD_HOLOCRON = 0.08f;
 const float ALTURA_LUZ_HOLOCRON = 1.5f;	//la luz va arriba del centro, fuera del cubo
 float posHolocronX = INICIO_HOLOCRON.x;
 float anguloHolocron = 0.0f;			//grados, aumenta en cada cuadro
+float aperturaHolocron = 0.0f;			//0: cerrado, 1: esquinas en su punto más alejado
+const float SEPARACION_ESQUINAS = 0.4f;	//distancia que avanza cada esquina sobre su diagonal al abrirse
+const float GIRO_ESQUINAS = 20.0f;		//grados que gira cada esquina sobre su diagonal al abrirse
 glm::vec3 posHolocron = INICIO_HOLOCRON;
 //Punto extremo de la pinza en coordenadas del rover (sin escala). La pinza viene en Cuerpo.obj,
 //arriba del brazo; su vértice más alejado está en (2.38, 12.44, -0.94) y la luz se pone un poco afuera
@@ -362,7 +367,8 @@ void CrearDado() //dado de lado 2 centrado en el origen (24 vértices, 36 índic
 //la misma ventana (una línea por captura: archivo.ppm y opciones) y luego sigue normal.
 //Opciones: --camara x y z yaw pitch, --rover x, --avion y, --linterna 0|1,
 //          --puntual con lin exp (luz roja), --spot con lin exp (luz verde fija),
-//          --color 0..5 (luz del avión), --holocron 0|1, --pinza 0|1, --holocronx x, --holocronang grados
+//          --color 0..5 (luz del avión), --holocron 0|1, --pinza 0|1, --holocronx x, --holocronang grados,
+//          --apertura 0..1 (esquinas del holocrón)
 //------------------------------------------------------------------
 struct Captura
 {
@@ -381,6 +387,7 @@ void RestaurarEscena()
 	posAvionZ = INICIO_AVION_Z;
 	posHolocronX = INICIO_HOLOCRON.x;
 	anguloHolocron = 0.0f;
+	aperturaHolocron = 0.0f;
 	linternaEncendida = true;
 	pointLights[0] = luzRojaInicial;
 	spotLights[1] = luzVerdeInicial;
@@ -404,6 +411,7 @@ void AplicarOpciones(const std::vector<std::string>& op)
 		else if (op[i] == "--avionz" && i + 1 < op.size()) posAvionZ = num(++i);
 		else if (op[i] == "--holocronx" && i + 1 < op.size()) posHolocronX = num(++i);
 		else if (op[i] == "--holocronang" && i + 1 < op.size()) anguloHolocron = num(++i);
+		else if (op[i] == "--apertura" && i + 1 < op.size()) aperturaHolocron = num(++i);
 		else if (op[i] == "--linterna" && i + 1 < op.size()) linternaEncendida = num(++i) != 0.0f;
 		else if (op[i] == "--color" && i + 1 < op.size()) colorLuzAvion = (int)num(++i) % 6;
 		else if (op[i] == "--holocron" && i + 1 < op.size()) luzHolocronEncendida = num(++i) != 0.0f;
@@ -508,8 +516,9 @@ int main(int argc, char** argv)
 		Llanta_M[i].LoadModel(std::string("Models/Llanta_") + nombresPiezas[i] + ".obj");
 	}
 
-	//Holocrón Jedi: 24 vértices, 12 triángulos y una textura que se repite en las seis caras
-	HolocronImportado_M.LoadModel("Models/holocron_jedi.obj");
+	//Holocrón Jedi: esquina (octante del cubo) y núcleo, 24 vértices y 12 triángulos cada uno, misma textura
+	HolocronEsquina_M.LoadModel("Models/holocron_esquina.obj");
+	HolocronNucleo_M.LoadModel("Models/holocron_nucleo.obj");
 	Avion_M.LoadModel("Models/avion_verde.obj");
 
 	Lampara_M.LoadModel("Models/lampara.obj");
@@ -690,7 +699,9 @@ int main(int argc, char** argv)
 			if (keys[GLFW_KEY_RIGHT]) posHolocronX += VELOCIDAD_HOLOCRON * deltaTime;
 			posHolocronX = glm::clamp(posHolocronX, -14.0f, 10.0f);
 			//giro continuo sobre Y (en las capturas se deja fijo para que la vista no dependa del tiempo)
-			anguloHolocron = fmod(anguloHolocron + 0.5f * deltaTime, 360.0f);
+			anguloHolocron = fmod(anguloHolocron + 0.5f * deltaTime, 720.0f);
+			//las esquinas se abren y se cierran solas (un ciclo cada ~8 s)
+			aperturaHolocron = 0.5f - 0.5f * cosf(now * 0.8f);
 		}
 
 		// Clear the window
@@ -730,7 +741,8 @@ int main(int argc, char** argv)
 
 		//Holocrón: posición del cuadro (X por teclado, Y flotando) y su luz encima
 		posHolocron = glm::vec3(posHolocronX, INICIO_HOLOCRON.y + (capturando ? 0.0f : 0.25f * sinf(now * 1.5f)), INICIO_HOLOCRON.z);
-		pointLights[2].SetPos(posHolocron + glm::vec3(0.0f, ALTURA_LUZ_HOLOCRON, 0.0f));
+		//la luz sube un poco cuando el holocrón está abierto para no quedar dentro de las esquinas de arriba
+		pointLights[2].SetPos(posHolocron + glm::vec3(0.0f, ALTURA_LUZ_HOLOCRON + 0.6f * aperturaHolocron, 0.0f));
 
 		glm::mat4 baseAvion(1.0);
 		baseAvion = glm::translate(baseAvion, glm::vec3(13.0f, posAvionY, posAvionZ));
@@ -820,13 +832,29 @@ int main(int argc, char** argv)
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		Lampara_M.RenderModel(uniformColor);
 
-		//Holocrón Jedi: se traslada a su posición del cuadro y gira sobre su eje Y
-		model = glm::mat4(1.0);
-		model = glm::translate(model, posHolocron);
-		model = glm::rotate(model, anguloHolocron * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		//Holocrón Jedi: se traslada a su posición del cuadro y gira sobre Y y, más despacio, sobre X,
+		//para que con el tiempo se vean sus seis caras
+		glm::mat4 baseHolocron(1.0);
+		baseHolocron = glm::translate(baseHolocron, posHolocron);
+		baseHolocron = glm::rotate(baseHolocron, anguloHolocron * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		baseHolocron = glm::rotate(baseHolocron, 0.5f * anguloHolocron * toRadians, glm::vec3(1.0f, 0.0f, 0.0f));
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		HolocronImportado_M.RenderModel(uniformColor);
+		//Núcleo: gira al revés que el holocrón; solo se ve cuando las esquinas se separan
+		model = glm::rotate(baseHolocron, -2.0f * anguloHolocron * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		HolocronNucleo_M.RenderModel(uniformColor);
+		//Esquinas: la misma malla (octante +X +Y +Z) reflejada con escalas de -1 hacia los otros siete octantes.
+		//Cada una se aleja del centro sobre su diagonal y gira sobre ella según la apertura
+		for (int e = 0; e < 8; e++)
+		{
+			glm::vec3 signo((e & 1) ? -1.0f : 1.0f, (e & 2) ? -1.0f : 1.0f, (e & 4) ? -1.0f : 1.0f);
+			glm::vec3 diagonal = glm::normalize(signo);
+			model = glm::translate(baseHolocron, diagonal * SEPARACION_ESQUINAS * aperturaHolocron);
+			model = glm::rotate(model, GIRO_ESQUINAS * aperturaHolocron * toRadians, diagonal);
+			model = glm::scale(model, signo);
+			glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+			HolocronEsquina_M.RenderModel(uniformColor);
+		}
 
 		//Dado por código
 		color = glm::vec3(1.0f, 1.0f, 1.0f);

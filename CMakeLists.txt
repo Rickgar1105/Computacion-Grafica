@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(practica8_iluminacion CXX)
+project(ejercicio8_iluminacion CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,8 +28,8 @@ if(NOT GLM_INCLUDE_DIR)
 	message(FATAL_ERROR "No se encontro glm. Instala con: brew install glm")
 endif()
 
-add_executable(practica8
-	practica8.cpp
+add_executable(ejercicio8
+	ejercicio8.cpp
 	Camera.cpp
 	Window.cpp
 	Shader_light.cpp
@@ -45,7 +45,7 @@ add_executable(practica8
 )
 
 # Los fuentes del curso incluyen <glew.h>, <glfw3.h> y <glm.hpp> sin carpeta
-target_include_directories(practica8 PRIVATE
+target_include_directories(ejercicio8 PRIVATE
 	${GLFW_INCLUDE_DIRS}
 	${GLFW_INCLUDE_DIRS}/GLFW
 	${GLEW_INCLUDE_DIRS}
@@ -55,14 +55,14 @@ target_include_directories(practica8 PRIVATE
 )
 
 if(ASSIMP_FOUND)
-	target_include_directories(practica8 PRIVATE ${ASSIMP_INCLUDE_DIRS})
-	target_link_libraries(practica8 PRIVATE PkgConfig::ASSIMP)
+	target_include_directories(ejercicio8 PRIVATE ${ASSIMP_INCLUDE_DIRS})
+	target_link_libraries(ejercicio8 PRIVATE PkgConfig::ASSIMP)
 else()
-	target_include_directories(practica8 PRIVATE ${ASSIMP_INCLUDE_DIR})
-	target_link_libraries(practica8 PRIVATE ${ASSIMP_LIBRARY})
+	target_include_directories(ejercicio8 PRIVATE ${ASSIMP_INCLUDE_DIR})
+	target_link_libraries(ejercicio8 PRIVATE ${ASSIMP_LIBRARY})
 endif()
 
-target_link_libraries(practica8 PRIVATE
+target_link_libraries(ejercicio8 PRIVATE
 	PkgConfig::GLFW
 	PkgConfig::GLEW
 	OpenGL::GL
@@ -70,14 +70,14 @@ target_link_libraries(practica8 PRIVATE
 
 # Copiar shaders, modelos y texturas junto al ejecutable para que funcionen
 # las rutas relativas ("shaders/...", "Models/...", "Textures/...").
-add_custom_command(TARGET practica8 POST_BUILD
+add_custom_command(TARGET ejercicio8 POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/shaders
-		$<TARGET_FILE_DIR:practica8>/shaders
+		$<TARGET_FILE_DIR:ejercicio8>/shaders
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/Models
-		$<TARGET_FILE_DIR:practica8>/Models
+		$<TARGET_FILE_DIR:ejercicio8>/Models
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/Textures
-		$<TARGET_FILE_DIR:practica8>/Textures
+		$<TARGET_FILE_DIR:ejercicio8>/Textures
 )
