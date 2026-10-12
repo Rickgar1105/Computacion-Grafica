@@ -17,6 +17,7 @@ Ricardo Emmanuel Galicia Tequianes - 118001740
 - Y / U: rover hacia adelante / hacia atrás (faro azul y giro de llantas)
 - Flecha arriba / abajo: el avión sube / baja con su luz inferior
 - H / J: el avión avanza / retrocede con su faro naranja
+- Flecha izquierda / derecha: mueve el holocrón Jedi (además gira y flota solo)
 - C: siguiente color de la luz inferior del avión (rojo, amarillo, verde, cian, azul, magenta)
 - K: enciende o apaga la luz azul claro del holocrón
 - P: enciende o apaga la luz verde de la pinza del rover
@@ -32,5 +33,7 @@ ventana, guarda cada vista como .ppm en la carpeta build (opciones nuevas: --col
 
 - Models/Pata_*.obj y Models/Llanta_*.obj: patas y llantas del rover separadas en Blender
   (script Models/separar_llantas_rover.py; archivo editable en ../Blender/rover_llantas_separadas.blend).
+- Models/holocron_jedi.obj: holocrón optimizado (24 vértices, 12 triángulos, una textura: Textures/holocron_jedi.png,
+  hecha de una foto con ../_trabajo/textura_holocron.py).
 - Models/lampara.obj: light-curved de Kenney, City Kit (Roads), licencia CC0.
 - Evidencias: capturas usadas en los documentos.

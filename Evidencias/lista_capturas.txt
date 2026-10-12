@@ -1,4 +1,4 @@
-# archivo  opciones   (avión en x=13, rover en x=1 z=6, holocrón importado en -6 0 -1.5)
+# archivo  opciones   (avión en x=13, rover en x=1 z=6, holocrón Jedi en -6 0.8 -1.5)
 g_general.ppm --linterna 0 --camara 0 10 30 -90 -20
 a_0_rojo.ppm --linterna 0 --color 0 --camara 13 7 10 -90 -28
 a_1_amarillo.ppm --linterna 0 --color 1 --camara 13 7 10 -90 -28
@@ -6,8 +6,10 @@ a_2_verde.ppm --linterna 0 --color 2 --camara 13 7 10 -90 -28
 a_3_cian.ppm --linterna 0 --color 3 --camara 13 7 10 -90 -28
 a_4_azul.ppm --linterna 0 --color 4 --camara 13 7 10 -90 -28
 a_5_magenta.ppm --linterna 0 --color 5 --camara 13 7 10 -90 -28
-h_encendida.ppm --linterna 0 --holocron 1 --camara -6 3 6 -90 -22
-h_apagada.ppm --linterna 0 --holocron 0 --camara -6 3 6 -90 -22
 p_encendida.ppm --linterna 0 --pinza 1 --camara 2 6 14 -90 -14
 p_apagada.ppm --linterna 0 --pinza 0 --camara 2 6 14 -90 -14
 p_movido.ppm --linterna 0 --pinza 1 --rover 8 --camara 9 6 14 -90 -14
+h_encendida.ppm --linterna 0 --holocron 1 --holocronang 30 --camara -6 3.5 6 -90 -18
+h_apagada.ppm --linterna 0 --holocron 0 --holocronang 30 --camara -6 3.5 6 -90 -18
+h_movido.ppm --linterna 0 --holocron 1 --holocronx -11 --holocronang 60 --camara -11 3.5 6 -90 -18
+h_cerca.ppm --linterna 0 --holocron 1 --holocronang 30 --camara -3.5 2.8 2.2 -125 -20
