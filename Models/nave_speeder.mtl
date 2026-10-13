@@ -1,0 +1,16 @@
+newmtl metal
+Kd 1 1 1
+map_Kd ../Textures/nave_metal.png
+
+newmtl metalRed
+Kd 1 1 1
+map_Kd ../Textures/nave_pintura.png
+
+newmtl metalDark
+Kd 1 1 1
+map_Kd ../Textures/nave_metal_oscuro.png
+
+newmtl dark
+Kd 1 1 1
+map_Kd ../Textures/nave_cabina.png
+

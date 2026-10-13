@@ -1,20 +1,10 @@
-# archivo  opciones   (avión en x=13, rover en x=1 z=6, holocrón Jedi en -6 0.8 -1.5)
+# archivo  opciones   (nave en -2 4 -9, frente hacia -X, llamas hacia +X)
 g_general.ppm --linterna 0 --camara 0 10 30 -90 -20
-a_0_rojo.ppm --linterna 0 --color 0 --camara 13 7 10 -90 -28
-a_1_amarillo.ppm --linterna 0 --color 1 --camara 13 7 10 -90 -28
-a_2_verde.ppm --linterna 0 --color 2 --camara 13 7 10 -90 -28
-a_3_cian.ppm --linterna 0 --color 3 --camara 13 7 10 -90 -28
-a_4_azul.ppm --linterna 0 --color 4 --camara 13 7 10 -90 -28
-a_5_magenta.ppm --linterna 0 --color 5 --camara 13 7 10 -90 -28
-p_encendida.ppm --linterna 0 --pinza 1 --camara 2 6 14 -90 -14
-p_apagada.ppm --linterna 0 --pinza 0 --camara 2 6 14 -90 -14
-p_movido.ppm --linterna 0 --pinza 1 --rover 8 --camara 9 6 14 -90 -14
-h_encendida.ppm --linterna 0 --holocron 1 --holocronang 30 --camara -6 3.5 6 -90 -18
-h_apagada.ppm --linterna 0 --holocron 0 --holocronang 30 --camara -6 3.5 6 -90 -18
-h_movido.ppm --linterna 0 --holocron 1 --holocronx -11 --holocronang 60 --camara -11 3.5 6 -90 -18
-h_abre_0.ppm --linterna 0 --holocronang 30 --apertura 0 --camara -3.5 2.8 2.2 -125 -20
-h_abre_50.ppm --linterna 0 --holocronang 30 --apertura 0.5 --camara -3.5 2.8 2.2 -125 -20
-h_abre_100.ppm --linterna 0 --holocronang 30 --apertura 1 --camara -3.5 2.8 2.2 -125 -20
-h_caras_1.ppm --linterna 0 --holocronang 150 --camara -3.5 2.8 2.2 -125 -20
-h_caras_2.ppm --linterna 0 --holocronang 290 --camara -3.5 2.8 2.2 -125 -20
-h_caras_3.ppm --linterna 0 --holocronang 430 --camara -3.5 2.8 2.2 -125 -20
+n_general.ppm --linterna 0 --camara 2 6 6 -110 -10
+m_ambos_apagados.ppm --linterna 0 --motor1 0 --motor2 0 --camara 5 5.5 -4 -140 -11
+m_ambos_prendidos.ppm --linterna 0 --motor1 1 --motor2 1 --camara 5 5.5 -4 -140 -11
+m_1apagado_2prendido.ppm --linterna 0 --motor1 0 --motor2 1 --camara 5 5.5 -4 -140 -11
+m_1prendido_2apagado.ppm --linterna 0 --motor1 1 --motor2 0 --camara 5 5.5 -4 -140 -11
+l_nave_prendidas.ppm --linterna 0 --nave 1 --camara -5 7.5 2 -100 -28
+l_nave_apagadas.ppm --linterna 0 --nave 0 --camara -5 7.5 2 -100 -28
+m_cerca.ppm --linterna 0 --camara 3 4.6 -6.5 -150 -6

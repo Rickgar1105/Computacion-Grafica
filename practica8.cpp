@@ -1,16 +1,15 @@
 /*
-Ejercicio de Práctica 8: Iluminación 2
+Práctica 8: Iluminación 2
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
-Se parte del código de la práctica 7 (rover, avión, dado y lámpara con sus luces). En la escena quedan un solo
-dado (el de la práctica 6, por código) y el holocrón Jedi, que reemplaza a los dos holocrones anteriores.
-Se agregó:
-- C: la luz del avión que apunta hacia el suelo cambia de color en el orden
-  rojo, amarillo, verde, cian, azul, magenta (y vuelve a rojo).
-- Holocrón Jedi armado con 8 esquinas y un núcleo, todos con la misma textura. Las esquinas se separan y giran
-  sobre su diagonal (se abre y se cierra), el holocrón gira en dos ejes para que se vean sus seis caras, flota,
-  y se mueve con las flechas izquierda / derecha. Lleva unida una luz puntual azul claro que K enciende o apaga.
-- Luz puntual verde en el punto extremo de la pinza del rover; se mueve con el rover y P la enciende o la apaga.
+Parte del código del ejercicio de clase 8 (luz del avión que cambia de color, holocrón Jedi con esquinas móviles
+y su luz, luz en la pinza del rover). Para la práctica se agregó:
+- Nave espacial importada (craft_speederA de Kenney, Space Kit, CC0) con texturas de placas de metal, pintura y
+  cabina, flotando sobre la escena. Lleva una luz puntual (baliza sobre la cabina) y una spotlight (faro delantero);
+  N enciende o apaga las dos al mismo tiempo.
+- En cada uno de los dos motores, una llama de plasma azul (tres planos cruzados con textura y transparencia) y una
+  luz puntual azul en la posición de la llama. 1 enciende o apaga el motor izquierdo y 2 el derecho, de forma
+  independiente: ambos apagados, ambos prendidos, solo el 1 o solo el 2.
 
 Controles:
 	W A S D + ratón		cámara
@@ -21,6 +20,8 @@ Controles:
 	C					siguiente color de la luz inferior del avión
 	K					enciende o apaga la luz del holocrón
 	P					enciende o apaga la luz de la pinza del rover
+	N					enciende o apaga las luces de la nave (puntual y spotlight)
+	1 / 2				enciende o apaga el motor 1 (izquierdo) / motor 2 (derecho): llama y luz azul
 	L					enciende o apaga la linterna de la cámara
 	Esc					cerrar
 */
@@ -92,6 +93,9 @@ Model HolocronNucleo_M;
 Model Avion_M;
 //Lámpara de calle
 Model Lampara_M;
+//Nave espacial de la práctica 8 y textura de la llama de sus motores
+Model Nave_M;
+Texture fuegoTexture;
 
 
 Skybox skybox;
@@ -178,6 +182,15 @@ glm::vec3 posHolocron = INICIO_HOLOCRON;
 //Punto extremo de la pinza en coordenadas del rover (sin escala). La pinza viene en Cuerpo.obj,
 //arriba del brazo; su vértice más alejado está en (2.38, 12.44, -0.94) y la luz se pone un poco afuera
 const glm::vec3 PUNTA_PINZA(2.45f, 12.55f, -0.95f);
+
+//Práctica 8: nave espacial. En el OBJ la nave mide 2 x 0.8 x 2.1, su frente es +Z y sus dos toberas están
+//atrás en (±0.35, 0.25, -1.05). Motor 1 = izquierdo (+X del modelo), motor 2 = derecho (-X)
+const glm::vec3 POS_NAVE(-2.0f, 4.0f, -9.0f);
+const float ESCALA_NAVE = 2.0f;
+const glm::vec3 TOBERA_NAVE[2] = { glm::vec3(0.35f, 0.25f, -1.05f), glm::vec3(-0.35f, 0.25f, -1.05f) };
+const float LARGO_LLAMA = 0.9f;			//en unidades del modelo
+bool lucesNaveEncendidas = true;		//N: luz puntual y spotlight de la nave
+bool motorEncendido[2] = { true, true };	//1 y 2: llama y luz azul de cada motor
 
 // Vertex Shader
 static const char* vShader = "shaders/shader_light.vert";
@@ -362,13 +375,38 @@ void CrearDado() //dado de lado 2 centrado en el origen (24 vértices, 36 índic
 }
 
 
+//Llama de plasma de un motor: tres planos que se cruzan sobre el eje -Z (a 0°, 60° y 120°), de ancho 1 y largo 1.
+//v = 0 en la tobera y v = 1 en la punta, igual que en la textura fuego_plasma.png. Al verse desde cualquier lado
+//siempre hay un plano casi de frente, así la llama parece tener volumen
+void CrearFuego()
+{
+	std::vector<GLfloat> v;
+	std::vector<unsigned int> idx;
+	for (int k = 0; k < 3; k++)
+	{
+		float ang = k * 60.0f * toRadians;
+		glm::vec3 lado(0.5f * cosf(ang), 0.5f * sinf(ang), 0.0f);	//mitad del ancho, perpendicular al eje
+		glm::vec3 n(-sinf(ang), cosf(ang), 0.0f);					//normal del plano
+		glm::vec3 p[4] = { -lado, lado, lado + glm::vec3(0, 0, -1), -lado + glm::vec3(0, 0, -1) };
+		float uv[4][2] = { {0, 0}, {1, 0}, {1, 1}, {0, 1} };
+		unsigned int base = (unsigned int)(v.size() / 8);
+		for (int i = 0; i < 4; i++)
+			v.insert(v.end(), { p[i].x, p[i].y, p[i].z, uv[i][0], uv[i][1], n.x, n.y, n.z });
+		idx.insert(idx.end(), { base, base + 1, base + 2, base, base + 2, base + 3 });
+	}
+	MeshModel* fuego = new MeshModel();
+	fuego->CreateMeshModel(v.data(), idx.data(), (unsigned int)v.size(), (unsigned int)idx.size());
+	meshListModel.push_back(fuego);	//meshListModel[5]
+}
+
+
 //------------------------------------------------------------------
 //Capturas para el reporte. Con --capturas lista.txt el programa recorre la lista dentro de
 //la misma ventana (una línea por captura: archivo.ppm y opciones) y luego sigue normal.
 //Opciones: --camara x y z yaw pitch, --rover x, --avion y, --linterna 0|1,
 //          --puntual con lin exp (luz roja), --spot con lin exp (luz verde fija),
 //          --color 0..5 (luz del avión), --holocron 0|1, --pinza 0|1, --holocronx x, --holocronang grados,
-//          --apertura 0..1 (esquinas del holocrón)
+//          --apertura 0..1 (esquinas del holocrón), --nave 0|1, --motor1 0|1, --motor2 0|1
 //------------------------------------------------------------------
 struct Captura
 {
@@ -394,6 +432,8 @@ void RestaurarEscena()
 	colorLuzAvion = COLOR_INICIAL_AVION;
 	luzHolocronEncendida = true;
 	luzPinzaEncendida = true;
+	lucesNaveEncendidas = true;
+	motorEncendido[0] = motorEncendido[1] = true;
 }
 
 void AplicarOpciones(const std::vector<std::string>& op)
@@ -416,6 +456,9 @@ void AplicarOpciones(const std::vector<std::string>& op)
 		else if (op[i] == "--color" && i + 1 < op.size()) colorLuzAvion = (int)num(++i) % 6;
 		else if (op[i] == "--holocron" && i + 1 < op.size()) luzHolocronEncendida = num(++i) != 0.0f;
 		else if (op[i] == "--pinza" && i + 1 < op.size()) luzPinzaEncendida = num(++i) != 0.0f;
+		else if (op[i] == "--nave" && i + 1 < op.size()) lucesNaveEncendidas = num(++i) != 0.0f;
+		else if (op[i] == "--motor1" && i + 1 < op.size()) motorEncendido[0] = num(++i) != 0.0f;
+		else if (op[i] == "--motor2" && i + 1 < op.size()) motorEncendido[1] = num(++i) != 0.0f;
 		else if (op[i] == "--puntual" && i + 3 < op.size())
 		{
 			pointLights[0] = PointLight(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, -6.0f, 1.5f, 1.5f, num(i + 1), num(i + 2), num(i + 3));
@@ -485,6 +528,7 @@ int main(int argc, char** argv)
 
 	CreateObjects();
 	CrearDado();
+	CrearFuego();
 	CreateShaders();
 
 	camera = Camera(glm::vec3(0.0f, 6.0f, 24.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -12.0f, 0.3f, 0.5f);
@@ -499,6 +543,8 @@ int main(int argc, char** argv)
 	pisoTexture.LoadTextureA();
 	AgaveTexture = Texture("Textures/Agave.tga");
 	AgaveTexture.LoadTextureA();
+	fuegoTexture = Texture("Textures/fuego_plasma.png");
+	fuegoTexture.LoadTextureA();
 	dadoTexture = Texture("Textures/dado_starwars.png");
 	dadoTexture.LoadTextureA();
 
@@ -522,6 +568,8 @@ int main(int argc, char** argv)
 	Avion_M.LoadModel("Models/avion_verde.obj");
 
 	Lampara_M.LoadModel("Models/lampara.obj");
+	//Nave: craft_speederA de Kenney con coordenadas UV agregadas y cuatro texturas (ver _trabajo/nave_uv.py)
+	Nave_M.LoadModel("Models/nave_speeder.obj");
 
 	std::vector<std::string> skyboxFaces;
 	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_rt.tga");
@@ -578,6 +626,24 @@ int main(int argc, char** argv)
 		1.0f, 0.09f, 0.032f);
 	pointLightCount++;
 
+	//luz puntual de la nave: baliza blanca cálida sobre la cabina; su posición se actualiza en cada cuadro
+	pointLights[4] = PointLight(1.0f, 0.75f, 0.4f,
+		0.0f, 3.0f,
+		0.0f, 0.0f, 0.0f,
+		1.0f, 0.09f, 0.032f);
+	pointLightCount++;
+
+	//luces de los motores: azules, en el centro de cada llama. La intensidad ambiental (0.6) hace que la
+	//llama se vea encendida aunque la luz quede en su mismo plano; la atenuación la limita a los alrededores
+	for (int m = 0; m < 2; m++)
+	{
+		pointLights[5 + m] = PointLight(0.2f, 0.45f, 1.0f,
+			0.6f, 2.0f,
+			0.0f, 0.0f, 0.0f,
+			1.0f, 0.22f, 0.2f);
+		pointLightCount++;
+	}
+
 	unsigned int spotLightCount = 0;
 	//linterna: el cono se abrió de 5° a 12° para que ilumine una cara completa del dado o del holocrón
 	spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f,
@@ -627,6 +693,16 @@ int main(int argc, char** argv)
 		20.0f);
 	spotLightCount++;
 
+	//faro de la nave: blanco, en la nariz y apuntando hacia adelante y hacia el piso (45°);
+	//posición y dirección se calculan en cada cuadro con la matriz de la nave
+	spotLights[5] = SpotLight(1.0f, 0.95f, 0.8f,
+		0.0f, 4.0f,
+		0.0f, 0.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		1.0f, 0.05f, 0.005f,
+		22.0f);
+	spotLightCount++;
+
 	//Estado inicial para volver a él después de cada captura
 	camaraInicial = camera;
 	luzRojaInicial = pointLights[0];
@@ -649,6 +725,7 @@ int main(int argc, char** argv)
 	}
 	bool teclaLAnterior = false;
 	bool teclaCAnterior = false, teclaKAnterior = false, teclaPAnterior = false;
+	bool teclaNAnterior = false, tecla1Anterior = false, tecla2Anterior = false;
 
 	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0,
 		uniformSpecularIntensity = 0, uniformShininess = 0;
@@ -694,6 +771,13 @@ int main(int argc, char** argv)
 			teclaKAnterior = keys[GLFW_KEY_K];
 			if (keys[GLFW_KEY_P] && !teclaPAnterior) luzPinzaEncendida = !luzPinzaEncendida;
 			teclaPAnterior = keys[GLFW_KEY_P];
+			//N: luces de la nave (puntual y spotlight juntas); 1 y 2: cada motor por separado
+			if (keys[GLFW_KEY_N] && !teclaNAnterior) lucesNaveEncendidas = !lucesNaveEncendidas;
+			teclaNAnterior = keys[GLFW_KEY_N];
+			if (keys[GLFW_KEY_1] && !tecla1Anterior) motorEncendido[0] = !motorEncendido[0];
+			tecla1Anterior = keys[GLFW_KEY_1];
+			if (keys[GLFW_KEY_2] && !tecla2Anterior) motorEncendido[1] = !motorEncendido[1];
+			tecla2Anterior = keys[GLFW_KEY_2];
 			//Holocrón: flecha izquierda / derecha lo mueven en X
 			if (keys[GLFW_KEY_LEFT]) posHolocronX -= VELOCIDAD_HOLOCRON * deltaTime;
 			if (keys[GLFW_KEY_RIGHT]) posHolocronX += VELOCIDAD_HOLOCRON * deltaTime;
@@ -753,6 +837,19 @@ int main(int argc, char** argv)
 		glm::vec3 posFaroAvion = glm::vec3(baseAvion * glm::vec4(0.0f, 0.0f, 3.4f, 1.0f));	//delante de la hélice
 		spotLights[4].SetPos(posFaroAvion);
 
+		//Nave: flota subiendo y bajando y se inclina un poco; está girada -90° en Y, así que su frente
+		//apunta hacia -X y las llamas salen hacia +X. Las luces se colocan con su misma matriz
+		glm::mat4 baseNave(1.0);
+		baseNave = glm::translate(baseNave, POS_NAVE + glm::vec3(0.0f, capturando ? 0.0f : 0.3f * sinf(now * 1.2f), 0.0f));
+		baseNave = glm::rotate(baseNave, -90.0f * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		baseNave = glm::rotate(baseNave, (capturando ? 0.0f : 4.0f * sinf(now * 0.9f)) * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
+		baseNave = glm::scale(baseNave, glm::vec3(ESCALA_NAVE));
+		pointLights[4].SetPos(glm::vec3(baseNave * glm::vec4(0.0f, 1.1f, 0.3f, 1.0f)));	//sobre la cabina
+		glm::vec3 dirFaroNave = glm::normalize(glm::vec3(baseNave * glm::vec4(0.0f, -1.0f, 1.0f, 0.0f)));
+		spotLights[5].SetFlash(glm::vec3(baseNave * glm::vec4(0.0f, 0.3f, 1.15f, 1.0f)), dirFaroNave);	//nariz
+		for (int m = 0; m < 2; m++)	//luz azul a la mitad de cada llama
+			pointLights[5 + m].SetPos(glm::vec3(baseNave * glm::vec4(TOBERA_NAVE[m] + glm::vec3(0.0f, 0.0f, -0.5f * LARGO_LLAMA), 1.0f)));
+
 		//información al shader de fuentes de iluminación
 		shaderList[0].SetDirectionalLight(&mainLight);
 		//Solo se envían las luces puntuales encendidas: el shader recorre las primeras pointLightCount
@@ -763,12 +860,17 @@ int main(int argc, char** argv)
 		puntualesEncendidas[numPuntuales++] = pointLights[1];	//lámpara
 		if (luzHolocronEncendida) puntualesEncendidas[numPuntuales++] = pointLights[2];
 		if (luzPinzaEncendida) puntualesEncendidas[numPuntuales++] = pointLights[3];
+		if (lucesNaveEncendidas) puntualesEncendidas[numPuntuales++] = pointLights[4];
+		if (motorEncendido[0]) puntualesEncendidas[numPuntuales++] = pointLights[5];
+		if (motorEncendido[1]) puntualesEncendidas[numPuntuales++] = pointLights[6];
 		shaderList[0].SetPointLights(puntualesEncendidas, numPuntuales);
-		//si la linterna está apagada se envía el arreglo a partir de la segunda luz
-		if (linternaEncendida)
-			shaderList[0].SetSpotLights(spotLights, spotLightCount);
-		else
-			shaderList[0].SetSpotLights(spotLights + 1, spotLightCount - 1);
+		//Igual con las spotlight: la linterna (0) y el faro de la nave (5) solo se mandan si están encendidos
+		SpotLight spotEncendidas[MAX_SPOT_LIGHTS];
+		unsigned int numSpot = 0;
+		if (linternaEncendida) spotEncendidas[numSpot++] = spotLights[0];
+		for (int i = 1; i <= 4; i++) spotEncendidas[numSpot++] = spotLights[i];
+		if (lucesNaveEncendidas) spotEncendidas[numSpot++] = spotLights[5];
+		shaderList[0].SetSpotLights(spotEncendidas, numSpot);
 
 
 
@@ -883,6 +985,35 @@ int main(int argc, char** argv)
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		meshListModel[3]->RenderMeshModel();
 		glDisable(GL_BLEND);
+
+		//Nave espacial
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(baseNave));
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		Nave_M.RenderModel(uniformColor);
+
+		//Llamas de los motores: se dibujan al final, con mezcla aditiva (se suman a lo que hay detrás, como una
+		//luz) y sin escribir en el buffer de profundidad para que los tres planos no se tapen entre sí.
+		//El largo varía un poco en cada cuadro para que parpadee
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glDepthMask(GL_FALSE);
+		color = glm::vec3(1.0f, 1.0f, 1.0f);	//la textura ya trae el brillo; la luz azul del motor la aviva
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		fuegoTexture.UseTexture();
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		for (int m = 0; m < 2; m++)
+		{
+			if (!motorEncendido[m]) continue;
+			float parpadeo = capturando ? 1.0f : 1.0f + 0.12f * sinf(now * 23.0f + 2.0f * m);
+			model = glm::translate(baseNave, TOBERA_NAVE[m]);
+			model = glm::scale(model, glm::vec3(0.24f, 0.24f, LARGO_LLAMA * parpadeo));
+			glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+			meshListModel[5]->RenderMeshModel();
+		}
+		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
+		color = glm::vec3(1.0f, 1.0f, 1.0f);
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
 
 		//Capturas: se guarda el tercer cuadro de cada vista y se pasa a la siguiente
 		if (capturando && ++cuadrosCaptura == 3)
