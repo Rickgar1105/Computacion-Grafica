@@ -1,10 +1,14 @@
-# archivo  opciones   (nave en -2 4 -9, frente hacia -X, llamas hacia +X)
-g_general.ppm --linterna 0 --camara 0 10 30 -90 -20
-n_general.ppm --linterna 0 --camara 2 6 6 -110 -10
-m_ambos_apagados.ppm --linterna 0 --motor1 0 --motor2 0 --camara 5 5.5 -4 -140 -11
-m_ambos_prendidos.ppm --linterna 0 --motor1 1 --motor2 1 --camara 5 5.5 -4 -140 -11
-m_1apagado_2prendido.ppm --linterna 0 --motor1 0 --motor2 1 --camara 5 5.5 -4 -140 -11
-m_1prendido_2apagado.ppm --linterna 0 --motor1 1 --motor2 0 --camara 5 5.5 -4 -140 -11
-l_nave_prendidas.ppm --linterna 0 --nave 1 --camara -5 7.5 2 -100 -28
-l_nave_apagadas.ppm --linterna 0 --nave 0 --camara -5 7.5 2 -100 -28
-m_cerca.ppm --linterna 0 --camara 3 4.6 -6.5 -150 -6
+# archivo  opciones   (rover sobre z = 6, orillas del piso en x = ±300; circuito del avión con centro (0, 10, -2))
+g_general.ppm --linterna 0 --recorrido 12 --camara 0 10 30 -90 -20
+r_orilla_der.ppm --linterna 0 --rover 297.28 --camara 290 3 16 -55 -14
+r_orilla_izq.ppm --linterna 0 --rover -297.36 --sentido -1 --camara -290 3 16 -125 -14
+r_llanta_a.ppm --linterna 0 --rover 100 --camara 102.3 0.2 10.5 -90 -6
+r_llanta_b.ppm --linterna 0 --rover 100.6 --camara 102.9 0.2 10.5 -90 -6
+a_arriba_1.ppm --linterna 0 --recorrido 6 --camara 0 45 16 -90 -65
+a_arriba_2.ppm --linterna 0 --recorrido 30 --camara 0 45 16 -90 -65
+a_arriba_3.ppm --linterna 0 --recorrido 36.57 --camara 0 45 16 -90 -65
+a_arriba_4.ppm --linterna 0 --recorrido 61 --camara 0 45 16 -90 -65
+a_arriba_5.ppm --linterna 0 --recorrido 85.7 --camara 0 45 16 -90 -65
+a_arriba_6.ppm --linterna 0 --recorrido 95 --camara 0 45 16 -90 -65
+a_recta.ppm --linterna 0 --recorrido 12 --camara -12 10.6 6 0 -3
+a_vuelta.ppm --linterna 0 --recorrido 36.57 --camara 20 10.6 8 -90 -3

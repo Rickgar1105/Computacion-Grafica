@@ -1,22 +1,25 @@
-# Práctica 8: Iluminación 2
+# Ejercicio de práctica 9: Animación básica
 
-Parte del código del ejercicio de clase 8 (que a su vez parte de la práctica 7).
+Parte del código de la práctica 8. El rover y el avión ya no se mueven con el teclado: se animan solos.
+
+- Rover: recorre el piso en X en un ciclo infinito. Avanza hasta que su frente llega a la orilla del plano
+  (x = 300), retrocede hasta que su parte trasera llega a la orilla contraria (x = -300) y vuelve a avanzar.
+  Las llantas giran según la distancia recorrida, al revés cuando retrocede.
+- Avión: vuela en un circuito cerrado (dos rectas y dos medias vueltas, a 10 de altura). Siempre apunta hacia
+  donde avanza, nunca vuela de reversa, y se ladea hacia adentro en las vueltas. Su faro gira con él.
 
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
 ## Compilar (macOS, Homebrew: glfw, glew, glm, assimp)
 
-    cd Practica8
+    cd Ejercicio9
     cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
     cmake --build build
-    cd build && ./practica8
+    cd build && ./ejercicio9
 
 ## Controles
 
 - W A S D + ratón: cámara
-- Y / U: rover hacia adelante / hacia atrás (faro azul y giro de llantas)
-- Flecha arriba / abajo: el avión sube / baja con su luz inferior
-- H / J: el avión avanza / retrocede con su faro naranja
 - Flecha izquierda / derecha: mueve el holocrón Jedi (además gira en dos ejes, flota y sus esquinas se abren y se cierran solas)
 - C: siguiente color de la luz inferior del avión (rojo, amarillo, verde, cian, azul, magenta)
 - K: enciende o apaga la luz azul claro del holocrón
@@ -28,8 +31,10 @@ Ricardo Emmanuel Galicia Tequianes - 118001740
 
 ## Capturas
 
-`./practica8 --capturas ../Evidencias/lista_capturas.txt` recorre la lista dentro de la misma
-ventana, guarda cada vista como .ppm en la carpeta build (opciones nuevas: --color 0..5, --holocron 0|1, --pinza 0|1, --holocronx x, --holocronang grados, --apertura 0..1, --nave 0|1, --motor1 0|1, --motor2 0|1) y después deja el programa abierto.
+`./ejercicio9 --capturas ../Evidencias/lista_capturas.txt` recorre la lista dentro de la misma
+ventana y guarda cada vista como .ppm en la carpeta build; mientras toma las capturas la animación se detiene
+y el estado sale de la lista (opciones del ejercicio 9: --rover x, --sentido 1|-1, --recorrido s, donde s es la
+distancia avanzada por el avión sobre su circuito). Con --salir el programa se cierra al terminar la lista.
 
 ## Archivos
 

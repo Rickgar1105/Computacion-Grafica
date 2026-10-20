@@ -1,21 +1,18 @@
 /*
-Práctica 8: Iluminación 2
+Ejercicio de Práctica 9: Animación Básica
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
-Parte del código del ejercicio de clase 8 (luz del avión que cambia de color, holocrón Jedi con esquinas móviles
-y su luz, luz en la pinza del rover). Para la práctica se agregó:
-- Nave espacial importada (craft_speederA de Kenney, Space Kit, CC0) con texturas de placas de metal, pintura y
-  cabina, flotando sobre la escena. Lleva una luz puntual (baliza sobre la cabina) y una spotlight (faro delantero);
-  N enciende o apaga las dos al mismo tiempo.
-- En cada uno de los dos motores, una llama de plasma azul (tres planos cruzados con textura y transparencia) y una
-  luz puntual azul en la posición de la llama. 1 enciende o apaga el motor izquierdo y 2 el derecho, de forma
-  independiente: ambos apagados, ambos prendidos, solo el 1 o solo el 2.
+Se parte del código de la práctica 8 (rover, avión, holocrón, nave y sus luces). El rover y el avión ya no se
+mueven con el teclado, ahora se animan solos:
+- El rover recorre el piso a lo largo de X en un ciclo infinito: avanza hasta que su frente llega a la orilla
+  del plano, retrocede hasta que su parte trasera llega a la orilla contraria y vuelve a avanzar. Las seis
+  llantas giran según la distancia recorrida, hacia un lado al avanzar y hacia el otro al retroceder.
+- El avión vuela en un circuito cerrado: dos rectas unidas por dos medias vueltas. Siempre apunta en la
+  dirección en la que avanza (nunca vuela de reversa) y se inclina hacia adentro en cada vuelta.
+  Sus dos spotlight (la de abajo y el faro) van con él y el faro gira con su rumbo.
 
 Controles:
 	W A S D + ratón		cámara
-	Y / U				rover hacia adelante / hacia atrás
-	Flecha arriba / abajo	el avión sube / baja
-	H / J				el avión avanza / retrocede
 	Flecha izq. / der.	el holocrón se mueve en X
 	C					siguiente color de la luz inferior del avión
 	K					enciende o apaga la luz del holocrón
@@ -143,15 +140,29 @@ const float RADIO_LLANTA = 1.241f * ESCALA_ROVER;	//radio de la llanta en el OBJ
 //Posición del dado por código (flotando, como en el código base, para poder verlo desde abajo)
 const glm::vec3 POS_DADO(-5.5f, 6.0f, 6.0f);
 
-//Movimiento con teclado
+//Ejercicio 9: animación del rover. El piso va de -10 a 10 y se escala 30 en X y Z, así que su orilla está en ±300.
+//En el OBJ el rover va de x = -6.604 (atrás) a x = 6.809 (frente); con la escala, su centro se detiene antes
+//de la orilla para que sea el frente (o la parte trasera) el que la toque
 const float INICIO_ROVER_X = 1.0f;		//posición del rover en el código base
-const float ALTURA_INICIAL_AVION = 5.0f;
-const float VELOCIDAD_ROVER = 0.1f;
-const float VELOCIDAD_AVION = 0.08f;
-float posRoverX = INICIO_ROVER_X;		//Y: avanza hacia +X (su frente), U: retrocede
-float posAvionY = ALTURA_INICIAL_AVION;	//flecha arriba: sube, flecha abajo: baja
-const float INICIO_AVION_Z = -4.0f;
-float posAvionZ = INICIO_AVION_Z;		//H: avanza hacia +Z (donde está su hélice), J: retrocede
+const float ORILLA_PISO = 10.0f * 30.0f;
+const float LIMITE_FRENTE_ROVER = ORILLA_PISO - 6.809f * ESCALA_ROVER;
+const float LIMITE_ATRAS_ROVER = -ORILLA_PISO + 6.604f * ESCALA_ROVER;
+const float VELOCIDAD_ROVER = 0.35f;
+float posRoverX = INICIO_ROVER_X;
+float sentidoRover = 1.0f;				//1: avanza hacia +X (su frente), -1: retrocede
+
+//Ejercicio 9: circuito del avión. Visto desde arriba es un estadio: recta hacia +X en z = centro + radio,
+//media vuelta, recta hacia -X en z = centro - radio y otra media vuelta. recorridoAvion es la distancia
+//avanzada sobre el circuito; solo aumenta, por eso el avión nunca vuela de reversa
+const glm::vec3 CENTRO_CIRCUITO(0.0f, 10.0f, -2.0f);
+const float MEDIA_RECTA = 12.0f;		//cada recta va de x = -12 a x = 12 respecto al centro
+const float RADIO_VUELTA = 8.0f;
+const float LARGO_RECTA = 2.0f * MEDIA_RECTA;
+const float LARGO_VUELTA = 3.14159265f * RADIO_VUELTA;
+const float LARGO_CIRCUITO = 2.0f * LARGO_RECTA + 2.0f * LARGO_VUELTA;
+const float INCLINACION_VUELTA = 25.0f;	//grados que se ladea a la mitad de cada vuelta
+const float VELOCIDAD_AVION = 0.15f;
+float recorridoAvion = 0.0f;
 bool linternaEncendida = true;
 
 //Ejercicio de práctica 8
@@ -400,10 +411,49 @@ void CrearFuego()
 }
 
 
+//Ejercicio 9: punto del circuito del avión a una distancia s del inicio (s puede ser mayor que el largo del
+//circuito, se toma el residuo). Regresa la posición, el rumbo (giro sobre Y para que su frente, +Z del modelo,
+//apunte en la dirección del movimiento) y la inclinación lateral en grados.
+//Tramos: recta hacia +X, vuelta del lado +X, recta hacia -X, vuelta del lado -X
+void PuntoCircuitoAvion(float s, glm::vec3& pos, float& rumbo, float& inclinacion)
+{
+	s = fmod(s, LARGO_CIRCUITO);
+	glm::vec3 dir;			//dirección del movimiento en el plano XZ
+	inclinacion = 0.0f;
+	if (s < LARGO_RECTA)
+	{
+		pos = CENTRO_CIRCUITO + glm::vec3(-MEDIA_RECTA + s, 0.0f, RADIO_VUELTA);
+		dir = glm::vec3(1.0f, 0.0f, 0.0f);
+	}
+	else if (s < LARGO_RECTA + LARGO_VUELTA)
+	{
+		float a = (s - LARGO_RECTA) / RADIO_VUELTA;	//ángulo recorrido en la vuelta, de 0 a pi
+		pos = CENTRO_CIRCUITO + glm::vec3(MEDIA_RECTA + RADIO_VUELTA * sinf(a), 0.0f, RADIO_VUELTA * cosf(a));
+		dir = glm::vec3(cosf(a), 0.0f, -sinf(a));
+		inclinacion = INCLINACION_VUELTA * sinf(a);	//0 al entrar y al salir de la vuelta, máximo a la mitad
+	}
+	else if (s < 2.0f * LARGO_RECTA + LARGO_VUELTA)
+	{
+		float d = s - LARGO_RECTA - LARGO_VUELTA;
+		pos = CENTRO_CIRCUITO + glm::vec3(MEDIA_RECTA - d, 0.0f, -RADIO_VUELTA);
+		dir = glm::vec3(-1.0f, 0.0f, 0.0f);
+	}
+	else
+	{
+		float a = (s - 2.0f * LARGO_RECTA - LARGO_VUELTA) / RADIO_VUELTA;
+		pos = CENTRO_CIRCUITO + glm::vec3(-MEDIA_RECTA - RADIO_VUELTA * sinf(a), 0.0f, -RADIO_VUELTA * cosf(a));
+		dir = glm::vec3(-cosf(a), 0.0f, sinf(a));
+		inclinacion = INCLINACION_VUELTA * sinf(a);
+	}
+	//girar sobre Y un ángulo r lleva +Z a (sen r, 0, cos r)
+	rumbo = atan2f(dir.x, dir.z);
+}
+
+
 //------------------------------------------------------------------
 //Capturas para el reporte. Con --capturas lista.txt el programa recorre la lista dentro de
 //la misma ventana (una línea por captura: archivo.ppm y opciones) y luego sigue normal.
-//Opciones: --camara x y z yaw pitch, --rover x, --avion y, --linterna 0|1,
+//Opciones: --camara x y z yaw pitch, --rover x, --sentido 1|-1 (rover), --recorrido s (avión), --linterna 0|1,
 //          --puntual con lin exp (luz roja), --spot con lin exp (luz verde fija),
 //          --color 0..5 (luz del avión), --holocron 0|1, --pinza 0|1, --holocronx x, --holocronang grados,
 //          --apertura 0..1 (esquinas del holocrón), --nave 0|1, --motor1 0|1, --motor2 0|1
@@ -421,8 +471,8 @@ void RestaurarEscena()
 {
 	camera = camaraInicial;
 	posRoverX = INICIO_ROVER_X;
-	posAvionY = ALTURA_INICIAL_AVION;
-	posAvionZ = INICIO_AVION_Z;
+	sentidoRover = 1.0f;
+	recorridoAvion = 0.0f;
 	posHolocronX = INICIO_HOLOCRON.x;
 	anguloHolocron = 0.0f;
 	aperturaHolocron = 0.0f;
@@ -447,8 +497,8 @@ void AplicarOpciones(const std::vector<std::string>& op)
 			i += 5;
 		}
 		else if (op[i] == "--rover" && i + 1 < op.size()) posRoverX = num(++i);
-		else if (op[i] == "--avion" && i + 1 < op.size()) posAvionY = num(++i);
-		else if (op[i] == "--avionz" && i + 1 < op.size()) posAvionZ = num(++i);
+		else if (op[i] == "--sentido" && i + 1 < op.size()) sentidoRover = num(++i);
+		else if (op[i] == "--recorrido" && i + 1 < op.size()) recorridoAvion = num(++i);
 		else if (op[i] == "--holocronx" && i + 1 < op.size()) posHolocronX = num(++i);
 		else if (op[i] == "--holocronang" && i + 1 < op.size()) anguloHolocron = num(++i);
 		else if (op[i] == "--apertura" && i + 1 < op.size()) aperturaHolocron = num(++i);
@@ -684,7 +734,7 @@ int main(int argc, char** argv)
 	spotLightCount++;
 
 	//faro delantero del avión: naranja, delante de la hélice y apuntando hacia adelante (+Z),
-	//un poco hacia el piso; se mueve con el avión al avanzar, retroceder, subir o bajar
+	//un poco hacia el piso; en cada cuadro se coloca y se orienta con la matriz del avión
 	spotLights[4] = SpotLight(1.0f, 0.5f, 0.0f,
 		0.0f, 5.0f,
 		0.0f, 0.0f, 0.0f,
@@ -748,18 +798,21 @@ int main(int argc, char** argv)
 			camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
 
 			bool* keys = mainWindow.getsKeys();
-			//Rover: Y hacia adelante (+X, donde está su frente), U hacia atrás
-			if (keys[GLFW_KEY_Y]) posRoverX += VELOCIDAD_ROVER * deltaTime;
-			if (keys[GLFW_KEY_U]) posRoverX -= VELOCIDAD_ROVER * deltaTime;
-			posRoverX = glm::clamp(posRoverX, -15.0f, 15.0f);
-			//Avión: flecha arriba sube, flecha abajo baja
-			if (keys[GLFW_KEY_UP]) posAvionY += VELOCIDAD_AVION * deltaTime;
-			if (keys[GLFW_KEY_DOWN]) posAvionY -= VELOCIDAD_AVION * deltaTime;
-			posAvionY = glm::clamp(posAvionY, 1.0f, 14.0f);
-			//Avión: H hacia adelante (+Z), J hacia atrás
-			if (keys[GLFW_KEY_H]) posAvionZ += VELOCIDAD_AVION * deltaTime;
-			if (keys[GLFW_KEY_J]) posAvionZ -= VELOCIDAD_AVION * deltaTime;
-			posAvionZ = glm::clamp(posAvionZ, -15.0f, 12.0f);
+			//Ejercicio 9, rover: avanza o retrocede según sentidoRover; al llegar a una orilla del piso
+			//se deja justo en el límite y se invierte el sentido
+			posRoverX += sentidoRover * VELOCIDAD_ROVER * deltaTime;
+			if (posRoverX >= LIMITE_FRENTE_ROVER)
+			{
+				posRoverX = LIMITE_FRENTE_ROVER;
+				sentidoRover = -1.0f;
+			}
+			else if (posRoverX <= LIMITE_ATRAS_ROVER)
+			{
+				posRoverX = LIMITE_ATRAS_ROVER;
+				sentidoRover = 1.0f;
+			}
+			//Ejercicio 9, avión: solo avanza sobre el circuito; fmod evita que el número crezca sin límite
+			recorridoAvion = fmod(recorridoAvion + VELOCIDAD_AVION * deltaTime, LARGO_CIRCUITO);
 			//L enciende o apaga la linterna (solo al presionar, no mientras se mantiene)
 			if (keys[GLFW_KEY_L] && !teclaLAnterior) linternaEncendida = !linternaEncendida;
 			teclaLAnterior = keys[GLFW_KEY_L];
@@ -828,14 +881,24 @@ int main(int argc, char** argv)
 		//la luz sube un poco cuando el holocrón está abierto para no quedar dentro de las esquinas de arriba
 		pointLights[2].SetPos(posHolocron + glm::vec3(0.0f, ALTURA_LUZ_HOLOCRON + 0.6f * aperturaHolocron, 0.0f));
 
+		//Ejercicio 9: el avión se coloca en su punto del circuito, se gira sobre Y con el rumbo y se ladea sobre
+		//su eje largo (Z del modelo). Las vueltas son a la izquierda y el ala izquierda es +X del modelo, por eso
+		//el ángulo es negativo: esa ala baja, hacia el centro de la vuelta
+		glm::vec3 posAvion;
+		float rumboAvion, inclinacionAvion;
+		PuntoCircuitoAvion(recorridoAvion, posAvion, rumboAvion, inclinacionAvion);
 		glm::mat4 baseAvion(1.0);
-		baseAvion = glm::translate(baseAvion, glm::vec3(13.0f, posAvionY, posAvionZ));
+		baseAvion = glm::translate(baseAvion, posAvion);
+		baseAvion = glm::rotate(baseAvion, rumboAvion, glm::vec3(0.0f, 1.0f, 0.0f));
+		baseAvion = glm::rotate(baseAvion, -inclinacionAvion * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
 		baseAvion = glm::scale(baseAvion, glm::vec3(0.75f, 0.75f, 0.75f));
 		glm::vec3 posLuzAvion = glm::vec3(baseAvion * glm::vec4(0.0f, -1.05f, 0.5f, 1.0f));	//debajo del fuselaje
 		spotLights[2].SetPos(posLuzAvion);
 		spotLights[2].SetColor(COLORES_LUZ_AVION[colorLuzAvion]);
+		//el faro apunta hacia el frente del avión y un poco hacia abajo; su dirección se gira con el avión
 		glm::vec3 posFaroAvion = glm::vec3(baseAvion * glm::vec4(0.0f, 0.0f, 3.4f, 1.0f));	//delante de la hélice
-		spotLights[4].SetPos(posFaroAvion);
+		glm::vec3 dirFaroAvion = glm::normalize(glm::vec3(baseAvion * glm::vec4(0.0f, -0.5f, 1.0f, 0.0f)));
+		spotLights[4].SetFlash(posFaroAvion, dirFaroAvion);
 
 		//Nave: flota subiendo y bajando y se inclina un poco; está girada -90° en Y, así que su frente
 		//apunta hacia -X y las llamas salen hacia +X. Las luces se colocan con su misma matriz
@@ -900,7 +963,7 @@ int main(int argc, char** argv)
 
 		//Rover de la práctica 5 con jerarquía: cuerpo -> pata -> llanta
 		//Giro de las llantas = distancia recorrida / radio; negativo porque avanza hacia +X
-		//y la llanta gira sobre su eje Z
+		//y la llanta gira sobre su eje Z. Al retroceder posRoverX disminuye y las llantas giran al revés
 		float giroLlantas = -(posRoverX - INICIO_ROVER_X) / RADIO_LLANTA;
 		model = baseRover;
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
@@ -923,7 +986,7 @@ int main(int argc, char** argv)
 			Llanta_M[i].RenderModel(uniformColor);
 		}
 
-		//Avión de la práctica 6: sube y baja con su luz
+		//Avión de la práctica 6: recorre su circuito con sus dos luces
 		model = baseAvion;
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Material_brillante.UseMaterial(uniformSpecularIntensity, uniformShininess);
