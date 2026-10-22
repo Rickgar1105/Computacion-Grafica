@@ -8,6 +8,7 @@ Window::Window()
 	{
 		keys[i] = 0;
 	}
+	reiniciarControles();
 }
 Window::Window(GLint windowWidth, GLint windowHeight)
 {
@@ -24,7 +25,21 @@ Window::Window(GLint windowWidth, GLint windowHeight)
 	{
 		keys[i] = 0;
 	}
+	reiniciarControles();
 }
+
+//Estado inicial de las luces y del holocrón (también se usa al terminar cada captura)
+void Window::reiniciarControles()
+{
+	linterna = true;
+	colorAvion = 1;			//amarillo, el color que tenía en la práctica 7
+	luzHolocron = true;
+	luzPinza = true;
+	lucesNave = true;
+	motor[0] = motor[1] = true;
+	holocronX = -6.0f;		//misma X que INICIO_HOLOCRON en ejercicio9.cpp
+}
+
 int Window::Initialise()
 {
 	//Inicialización de GLFW
@@ -43,7 +58,7 @@ int Window::Initialise()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	//CREAR VENTANA
-	mainWindow = glfwCreateWindow(width, height, "Practica 8: Iluminacion 2", NULL, NULL);
+	mainWindow = glfwCreateWindow(width, height, "Ejercicio 9: Animacion basica", NULL, NULL);
 
 	if (!mainWindow)
 	{
@@ -119,6 +134,24 @@ void Window::ManejaTeclado(GLFWwindow* window, int key, int code, int action, in
 	if (key == GLFW_KEY_U)
 	{
 		theWindow-> muevex -= 1.0;
+	}
+
+	//Luces: cambian solo cuando se presiona la tecla (GLFW_PRESS), no mientras se mantiene
+	if (action == GLFW_PRESS)
+	{
+		if (key == GLFW_KEY_L) theWindow->linterna = !theWindow->linterna;
+		if (key == GLFW_KEY_C) theWindow->colorAvion = (theWindow->colorAvion + 1) % 6;
+		if (key == GLFW_KEY_K) theWindow->luzHolocron = !theWindow->luzHolocron;
+		if (key == GLFW_KEY_P) theWindow->luzPinza = !theWindow->luzPinza;
+		if (key == GLFW_KEY_N) theWindow->lucesNave = !theWindow->lucesNave;
+		if (key == GLFW_KEY_1) theWindow->motor[0] = !theWindow->motor[0];
+		if (key == GLFW_KEY_2) theWindow->motor[1] = !theWindow->motor[1];
+	}
+	//Holocrón: se mueve en X al presionar y mientras se mantiene la flecha (GLFW_REPEAT), entre -14 y 10
+	if (action == GLFW_PRESS || action == GLFW_REPEAT)
+	{
+		if (key == GLFW_KEY_LEFT && theWindow->holocronX > -14.0f) theWindow->holocronX -= 0.3f;
+		if (key == GLFW_KEY_RIGHT && theWindow->holocronX < 10.0f) theWindow->holocronX += 0.3f;
 	}
 
 

@@ -11,7 +11,11 @@ mueven con el teclado, ahora se animan solos:
   dirección en la que avanza (nunca vuela de reversa) y se inclina hacia adentro en cada vuelta.
   Sus dos spotlight (la de abajo y el faro) van con él y el faro gira con su rumbo.
 
-Controles:
+Las teclas se procesan en Window::ManejaTeclado (Window.cpp), que guarda el estado de cada luz, el color de la
+luz del avión y la posición del holocrón; aquí solo se leen con los get de mainWindow. Las variables que se
+usan en cada cuadro se declaran antes del while y dentro solo se les asigna valor.
+
+Controles (Window.cpp):
 	W A S D + ratón		cámara
 	Flecha izq. / der.	el holocrón se mueve en X
 	C					siguiente color de la luz inferior del avión
@@ -163,7 +167,6 @@ const float LARGO_CIRCUITO = 2.0f * LARGO_RECTA + 2.0f * LARGO_VUELTA;
 const float INCLINACION_VUELTA = 25.0f;	//grados que se ladea a la mitad de cada vuelta
 const float VELOCIDAD_AVION = 0.15f;
 float recorridoAvion = 0.0f;
-bool linternaEncendida = true;
 
 //Ejercicio de práctica 8
 //Colores de la luz inferior del avión, en el orden en que se recorren con C
@@ -175,16 +178,12 @@ const glm::vec3 COLORES_LUZ_AVION[6] = {
 	glm::vec3(0.0f, 0.0f, 1.0f),	//azul
 	glm::vec3(1.0f, 0.0f, 1.0f)		//magenta
 };
-const int COLOR_INICIAL_AVION = 1;	//amarillo, el color que tenía en la práctica 7
-int colorLuzAvion = COLOR_INICIAL_AVION;
-bool luzHolocronEncendida = true;
-bool luzPinzaEncendida = true;
+//El índice del color actual, el encendido de cada luz y la posición en X del holocrón los guarda Window,
+//porque cambian con el teclado (ver Window::ManejaTeclado)
 //Holocrón Jedi: cubo de lado 2 con centro en su origen, armado con 8 esquinas y un núcleo.
-//Las flechas izquierda / derecha lo mueven en X; además gira, flota y sus esquinas se abren y se cierran
+//Las flechas izquierda / derecha lo mueven en X (Window); además gira, flota y sus esquinas se abren y se cierran
 const glm::vec3 INICIO_HOLOCRON(-6.0f, 0.8f, -1.5f);
-const float VELOCIDAD_HOLOCRON = 0.08f;
 const float ALTURA_LUZ_HOLOCRON = 1.5f;	//la luz va arriba del centro, fuera del cubo
-float posHolocronX = INICIO_HOLOCRON.x;
 float anguloHolocron = 0.0f;			//grados, aumenta en cada cuadro
 float aperturaHolocron = 0.0f;			//0: cerrado, 1: esquinas en su punto más alejado
 const float SEPARACION_ESQUINAS = 0.4f;	//distancia que avanza cada esquina sobre su diagonal al abrirse
@@ -200,8 +199,6 @@ const glm::vec3 POS_NAVE(-2.0f, 4.0f, -9.0f);
 const float ESCALA_NAVE = 2.0f;
 const glm::vec3 TOBERA_NAVE[2] = { glm::vec3(0.35f, 0.25f, -1.05f), glm::vec3(-0.35f, 0.25f, -1.05f) };
 const float LARGO_LLAMA = 0.9f;			//en unidades del modelo
-bool lucesNaveEncendidas = true;		//N: luz puntual y spotlight de la nave
-bool motorEncendido[2] = { true, true };	//1 y 2: llama y luz azul de cada motor
 
 // Vertex Shader
 static const char* vShader = "shaders/shader_light.vert";
@@ -473,17 +470,11 @@ void RestaurarEscena()
 	posRoverX = INICIO_ROVER_X;
 	sentidoRover = 1.0f;
 	recorridoAvion = 0.0f;
-	posHolocronX = INICIO_HOLOCRON.x;
 	anguloHolocron = 0.0f;
 	aperturaHolocron = 0.0f;
-	linternaEncendida = true;
 	pointLights[0] = luzRojaInicial;
 	spotLights[1] = luzVerdeInicial;
-	colorLuzAvion = COLOR_INICIAL_AVION;
-	luzHolocronEncendida = true;
-	luzPinzaEncendida = true;
-	lucesNaveEncendidas = true;
-	motorEncendido[0] = motorEncendido[1] = true;
+	mainWindow.reiniciarControles();
 }
 
 void AplicarOpciones(const std::vector<std::string>& op)
@@ -499,16 +490,16 @@ void AplicarOpciones(const std::vector<std::string>& op)
 		else if (op[i] == "--rover" && i + 1 < op.size()) posRoverX = num(++i);
 		else if (op[i] == "--sentido" && i + 1 < op.size()) sentidoRover = num(++i);
 		else if (op[i] == "--recorrido" && i + 1 < op.size()) recorridoAvion = num(++i);
-		else if (op[i] == "--holocronx" && i + 1 < op.size()) posHolocronX = num(++i);
+		else if (op[i] == "--holocronx" && i + 1 < op.size()) mainWindow.setHolocronX(num(++i));
 		else if (op[i] == "--holocronang" && i + 1 < op.size()) anguloHolocron = num(++i);
 		else if (op[i] == "--apertura" && i + 1 < op.size()) aperturaHolocron = num(++i);
-		else if (op[i] == "--linterna" && i + 1 < op.size()) linternaEncendida = num(++i) != 0.0f;
-		else if (op[i] == "--color" && i + 1 < op.size()) colorLuzAvion = (int)num(++i) % 6;
-		else if (op[i] == "--holocron" && i + 1 < op.size()) luzHolocronEncendida = num(++i) != 0.0f;
-		else if (op[i] == "--pinza" && i + 1 < op.size()) luzPinzaEncendida = num(++i) != 0.0f;
-		else if (op[i] == "--nave" && i + 1 < op.size()) lucesNaveEncendidas = num(++i) != 0.0f;
-		else if (op[i] == "--motor1" && i + 1 < op.size()) motorEncendido[0] = num(++i) != 0.0f;
-		else if (op[i] == "--motor2" && i + 1 < op.size()) motorEncendido[1] = num(++i) != 0.0f;
+		else if (op[i] == "--linterna" && i + 1 < op.size()) mainWindow.setLinterna(num(++i) != 0.0f);
+		else if (op[i] == "--color" && i + 1 < op.size()) mainWindow.setColorAvion((int)num(++i) % 6);
+		else if (op[i] == "--holocron" && i + 1 < op.size()) mainWindow.setLuzHolocron(num(++i) != 0.0f);
+		else if (op[i] == "--pinza" && i + 1 < op.size()) mainWindow.setLuzPinza(num(++i) != 0.0f);
+		else if (op[i] == "--nave" && i + 1 < op.size()) mainWindow.setLucesNave(num(++i) != 0.0f);
+		else if (op[i] == "--motor1" && i + 1 < op.size()) mainWindow.setMotor(0, num(++i) != 0.0f);
+		else if (op[i] == "--motor2" && i + 1 < op.size()) mainWindow.setMotor(1, num(++i) != 0.0f);
 		else if (op[i] == "--puntual" && i + 3 < op.size())
 		{
 			pointLights[0] = PointLight(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, -6.0f, 1.5f, 1.5f, num(i + 1), num(i + 2), num(i + 3));
@@ -773,9 +764,19 @@ int main(int argc, char** argv)
 		glfwSwapInterval(0);
 		AplicarOpciones(capturas[0].opciones);
 	}
-	bool teclaLAnterior = false;
-	bool teclaCAnterior = false, teclaKAnterior = false, teclaPAnterior = false;
-	bool teclaNAnterior = false, tecla1Anterior = false, tecla2Anterior = false;
+	//Variables que se usan en cada cuadro: se declaran una sola vez aquí y dentro del while solo se les asigna valor
+	GLfloat now = 0.0f;
+	bool capturando = false;
+	glm::vec3 lowerLight, posFaroRover, posLuzPinza;
+	glm::vec3 posAvion, posLuzAvion, posFaroAvion, dirFaroAvion, dirFaroNave;
+	float rumboAvion = 0.0f, inclinacionAvion = 0.0f, giroLlantas = 0.0f, parpadeo = 1.0f;
+	glm::mat4 baseRover(1.0), baseAvion(1.0), baseNave(1.0), baseHolocron(1.0);
+	glm::mat4 model(1.0), modelaux(1.0);
+	glm::vec3 color(1.0f, 1.0f, 1.0f), signo, diagonal;
+	PointLight puntualesEncendidas[MAX_POINT_LIGHTS];
+	SpotLight spotEncendidas[MAX_SPOT_LIGHTS];
+	unsigned int numPuntuales = 0, numSpot = 0;
+	int i, e, m;	//contadores de los ciclos for del while
 
 	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0,
 		uniformSpecularIntensity = 0, uniformShininess = 0;
@@ -784,11 +785,11 @@ int main(int argc, char** argv)
 	////Loop mientras no se cierra la ventana
 	while (!mainWindow.getShouldClose())
 	{
-		GLfloat now = glfwGetTime();
+		now = glfwGetTime();
 		deltaTime = now - lastTime;
 		deltaTime += (now - lastTime) / limitFPS;
 		lastTime = now;
-		bool capturando = capturaActual < capturas.size();
+		capturando = capturaActual < capturas.size();
 
 		//Recibir eventos del usuario
 		glfwPollEvents();
@@ -797,7 +798,6 @@ int main(int argc, char** argv)
 			camera.keyControl(mainWindow.getsKeys(), deltaTime);
 			camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
 
-			bool* keys = mainWindow.getsKeys();
 			//Ejercicio 9, rover: avanza o retrocede según sentidoRover; al llegar a una orilla del piso
 			//se deja justo en el límite y se invierte el sentido
 			posRoverX += sentidoRover * VELOCIDAD_ROVER * deltaTime;
@@ -813,28 +813,6 @@ int main(int argc, char** argv)
 			}
 			//Ejercicio 9, avión: solo avanza sobre el circuito; fmod evita que el número crezca sin límite
 			recorridoAvion = fmod(recorridoAvion + VELOCIDAD_AVION * deltaTime, LARGO_CIRCUITO);
-			//L enciende o apaga la linterna (solo al presionar, no mientras se mantiene)
-			if (keys[GLFW_KEY_L] && !teclaLAnterior) linternaEncendida = !linternaEncendida;
-			teclaLAnterior = keys[GLFW_KEY_L];
-			//C: siguiente color de la luz inferior del avión
-			if (keys[GLFW_KEY_C] && !teclaCAnterior) colorLuzAvion = (colorLuzAvion + 1) % 6;
-			teclaCAnterior = keys[GLFW_KEY_C];
-			//K: luz del holocrón, P: luz de la pinza del rover
-			if (keys[GLFW_KEY_K] && !teclaKAnterior) luzHolocronEncendida = !luzHolocronEncendida;
-			teclaKAnterior = keys[GLFW_KEY_K];
-			if (keys[GLFW_KEY_P] && !teclaPAnterior) luzPinzaEncendida = !luzPinzaEncendida;
-			teclaPAnterior = keys[GLFW_KEY_P];
-			//N: luces de la nave (puntual y spotlight juntas); 1 y 2: cada motor por separado
-			if (keys[GLFW_KEY_N] && !teclaNAnterior) lucesNaveEncendidas = !lucesNaveEncendidas;
-			teclaNAnterior = keys[GLFW_KEY_N];
-			if (keys[GLFW_KEY_1] && !tecla1Anterior) motorEncendido[0] = !motorEncendido[0];
-			tecla1Anterior = keys[GLFW_KEY_1];
-			if (keys[GLFW_KEY_2] && !tecla2Anterior) motorEncendido[1] = !motorEncendido[1];
-			tecla2Anterior = keys[GLFW_KEY_2];
-			//Holocrón: flecha izquierda / derecha lo mueven en X
-			if (keys[GLFW_KEY_LEFT]) posHolocronX -= VELOCIDAD_HOLOCRON * deltaTime;
-			if (keys[GLFW_KEY_RIGHT]) posHolocronX += VELOCIDAD_HOLOCRON * deltaTime;
-			posHolocronX = glm::clamp(posHolocronX, -14.0f, 10.0f);
 			//giro continuo sobre Y (en las capturas se deja fijo para que la vista no dependa del tiempo)
 			anguloHolocron = fmod(anguloHolocron + 0.5f * deltaTime, 720.0f);
 			//las esquinas se abren y se cierran solas (un ciclo cada ~8 s)
@@ -862,84 +840,79 @@ int main(int argc, char** argv)
 
 		// luz ligada a la cámara de tipo flash
 		//sirve para que en tiempo de ejecución (dentro del while) se cambien propiedades de la luz
-		glm::vec3 lowerLight = camera.getCameraPosition();
+		lowerLight = camera.getCameraPosition();
 		lowerLight.y -= 0.3f;
 		spotLights[0].SetFlash(lowerLight, camera.getCameraDirection());
 
 		//Matrices base del rover y del avión: se usan para dibujarlos y para colocar sus luces,
 		//así la luz siempre queda en el mismo punto del modelo aunque este se mueva
-		glm::mat4 baseRover(1.0);
+		baseRover = glm::mat4(1.0);
 		baseRover = glm::translate(baseRover, glm::vec3(posRoverX, -1.0f, 6.0f));
 		baseRover = glm::scale(baseRover, glm::vec3(ESCALA_ROVER, ESCALA_ROVER, ESCALA_ROVER));
-		glm::vec3 posFaroRover = glm::vec3(baseRover * glm::vec4(6.9f, 2.3f, 0.0f, 1.0f));	//frente del cuerpo
+		posFaroRover = glm::vec3(baseRover * glm::vec4(6.9f, 2.3f, 0.0f, 1.0f));	//frente del cuerpo
 		spotLights[3].SetPos(posFaroRover);
-		glm::vec3 posLuzPinza = glm::vec3(baseRover * glm::vec4(PUNTA_PINZA, 1.0f));
+		posLuzPinza = glm::vec3(baseRover * glm::vec4(PUNTA_PINZA, 1.0f));
 		pointLights[3].SetPos(posLuzPinza);
 
 		//Holocrón: posición del cuadro (X por teclado, Y flotando) y su luz encima
-		posHolocron = glm::vec3(posHolocronX, INICIO_HOLOCRON.y + (capturando ? 0.0f : 0.25f * sinf(now * 1.5f)), INICIO_HOLOCRON.z);
+		posHolocron = glm::vec3(mainWindow.getHolocronX(), INICIO_HOLOCRON.y + (capturando ? 0.0f : 0.25f * sinf(now * 1.5f)), INICIO_HOLOCRON.z);
 		//la luz sube un poco cuando el holocrón está abierto para no quedar dentro de las esquinas de arriba
 		pointLights[2].SetPos(posHolocron + glm::vec3(0.0f, ALTURA_LUZ_HOLOCRON + 0.6f * aperturaHolocron, 0.0f));
 
 		//Ejercicio 9: el avión se coloca en su punto del circuito, se gira sobre Y con el rumbo y se ladea sobre
 		//su eje largo (Z del modelo). Las vueltas son a la izquierda y el ala izquierda es +X del modelo, por eso
 		//el ángulo es negativo: esa ala baja, hacia el centro de la vuelta
-		glm::vec3 posAvion;
-		float rumboAvion, inclinacionAvion;
 		PuntoCircuitoAvion(recorridoAvion, posAvion, rumboAvion, inclinacionAvion);
-		glm::mat4 baseAvion(1.0);
+		baseAvion = glm::mat4(1.0);
 		baseAvion = glm::translate(baseAvion, posAvion);
 		baseAvion = glm::rotate(baseAvion, rumboAvion, glm::vec3(0.0f, 1.0f, 0.0f));
 		baseAvion = glm::rotate(baseAvion, -inclinacionAvion * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
 		baseAvion = glm::scale(baseAvion, glm::vec3(0.75f, 0.75f, 0.75f));
-		glm::vec3 posLuzAvion = glm::vec3(baseAvion * glm::vec4(0.0f, -1.05f, 0.5f, 1.0f));	//debajo del fuselaje
+		posLuzAvion = glm::vec3(baseAvion * glm::vec4(0.0f, -1.05f, 0.5f, 1.0f));	//debajo del fuselaje
 		spotLights[2].SetPos(posLuzAvion);
-		spotLights[2].SetColor(COLORES_LUZ_AVION[colorLuzAvion]);
+		spotLights[2].SetColor(COLORES_LUZ_AVION[mainWindow.getColorAvion()]);
 		//el faro apunta hacia el frente del avión y un poco hacia abajo; su dirección se gira con el avión
-		glm::vec3 posFaroAvion = glm::vec3(baseAvion * glm::vec4(0.0f, 0.0f, 3.4f, 1.0f));	//delante de la hélice
-		glm::vec3 dirFaroAvion = glm::normalize(glm::vec3(baseAvion * glm::vec4(0.0f, -0.5f, 1.0f, 0.0f)));
+		posFaroAvion = glm::vec3(baseAvion * glm::vec4(0.0f, 0.0f, 3.4f, 1.0f));	//delante de la hélice
+		dirFaroAvion = glm::normalize(glm::vec3(baseAvion * glm::vec4(0.0f, -0.5f, 1.0f, 0.0f)));
 		spotLights[4].SetFlash(posFaroAvion, dirFaroAvion);
 
 		//Nave: flota subiendo y bajando y se inclina un poco; está girada -90° en Y, así que su frente
 		//apunta hacia -X y las llamas salen hacia +X. Las luces se colocan con su misma matriz
-		glm::mat4 baseNave(1.0);
+		baseNave = glm::mat4(1.0);
 		baseNave = glm::translate(baseNave, POS_NAVE + glm::vec3(0.0f, capturando ? 0.0f : 0.3f * sinf(now * 1.2f), 0.0f));
 		baseNave = glm::rotate(baseNave, -90.0f * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		baseNave = glm::rotate(baseNave, (capturando ? 0.0f : 4.0f * sinf(now * 0.9f)) * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
 		baseNave = glm::scale(baseNave, glm::vec3(ESCALA_NAVE));
 		pointLights[4].SetPos(glm::vec3(baseNave * glm::vec4(0.0f, 1.1f, 0.3f, 1.0f)));	//sobre la cabina
-		glm::vec3 dirFaroNave = glm::normalize(glm::vec3(baseNave * glm::vec4(0.0f, -1.0f, 1.0f, 0.0f)));
+		dirFaroNave = glm::normalize(glm::vec3(baseNave * glm::vec4(0.0f, -1.0f, 1.0f, 0.0f)));
 		spotLights[5].SetFlash(glm::vec3(baseNave * glm::vec4(0.0f, 0.3f, 1.15f, 1.0f)), dirFaroNave);	//nariz
-		for (int m = 0; m < 2; m++)	//luz azul a la mitad de cada llama
+		for (m = 0; m < 2; m++)	//luz azul a la mitad de cada llama
 			pointLights[5 + m].SetPos(glm::vec3(baseNave * glm::vec4(TOBERA_NAVE[m] + glm::vec3(0.0f, 0.0f, -0.5f * LARGO_LLAMA), 1.0f)));
 
 		//información al shader de fuentes de iluminación
 		shaderList[0].SetDirectionalLight(&mainLight);
 		//Solo se envían las luces puntuales encendidas: el shader recorre las primeras pointLightCount
 		//del arreglo, así que se arma uno nuevo sin las que estén apagadas
-		PointLight puntualesEncendidas[MAX_POINT_LIGHTS];
-		unsigned int numPuntuales = 0;
+		numPuntuales = 0;
 		puntualesEncendidas[numPuntuales++] = pointLights[0];	//roja
 		puntualesEncendidas[numPuntuales++] = pointLights[1];	//lámpara
-		if (luzHolocronEncendida) puntualesEncendidas[numPuntuales++] = pointLights[2];
-		if (luzPinzaEncendida) puntualesEncendidas[numPuntuales++] = pointLights[3];
-		if (lucesNaveEncendidas) puntualesEncendidas[numPuntuales++] = pointLights[4];
-		if (motorEncendido[0]) puntualesEncendidas[numPuntuales++] = pointLights[5];
-		if (motorEncendido[1]) puntualesEncendidas[numPuntuales++] = pointLights[6];
+		if (mainWindow.getLuzHolocron()) puntualesEncendidas[numPuntuales++] = pointLights[2];
+		if (mainWindow.getLuzPinza()) puntualesEncendidas[numPuntuales++] = pointLights[3];
+		if (mainWindow.getLucesNave()) puntualesEncendidas[numPuntuales++] = pointLights[4];
+		if (mainWindow.getMotor(0)) puntualesEncendidas[numPuntuales++] = pointLights[5];
+		if (mainWindow.getMotor(1)) puntualesEncendidas[numPuntuales++] = pointLights[6];
 		shaderList[0].SetPointLights(puntualesEncendidas, numPuntuales);
 		//Igual con las spotlight: la linterna (0) y el faro de la nave (5) solo se mandan si están encendidos
-		SpotLight spotEncendidas[MAX_SPOT_LIGHTS];
-		unsigned int numSpot = 0;
-		if (linternaEncendida) spotEncendidas[numSpot++] = spotLights[0];
-		for (int i = 1; i <= 4; i++) spotEncendidas[numSpot++] = spotLights[i];
-		if (lucesNaveEncendidas) spotEncendidas[numSpot++] = spotLights[5];
+		numSpot = 0;
+		if (mainWindow.getLinterna()) spotEncendidas[numSpot++] = spotLights[0];
+		for (i = 1; i <= 4; i++) spotEncendidas[numSpot++] = spotLights[i];
+		if (mainWindow.getLucesNave()) spotEncendidas[numSpot++] = spotLights[5];
 		shaderList[0].SetSpotLights(spotEncendidas, numSpot);
 
 
 
-		glm::mat4 model(1.0);
-		glm::mat4 modelaux(1.0);
-		glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
+		modelaux = glm::mat4(1.0);
+		color = glm::vec3(1.0f, 1.0f, 1.0f);
 
 		model = glm::mat4(1.0);
 		model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
@@ -964,13 +937,13 @@ int main(int argc, char** argv)
 		//Rover de la práctica 5 con jerarquía: cuerpo -> pata -> llanta
 		//Giro de las llantas = distancia recorrida / radio; negativo porque avanza hacia +X
 		//y la llanta gira sobre su eje Z. Al retroceder posRoverX disminuye y las llantas giran al revés
-		float giroLlantas = -(posRoverX - INICIO_ROVER_X) / RADIO_LLANTA;
+		giroLlantas = -(posRoverX - INICIO_ROVER_X) / RADIO_LLANTA;
 		model = baseRover;
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		Cuerpo_M.RenderModel(uniformColor);
 		Brazo_M.RenderModel(uniformColor);
-		for (int i = 0; i < 6; i++)
+		for (i = 0; i < 6; i++)
 		{
 			//pata: gira sobre su punto de unión con el cuerpo (en la práctica 5 se movía con teclado)
 			modelaux = model;
@@ -999,7 +972,7 @@ int main(int argc, char** argv)
 
 		//Holocrón Jedi: se traslada a su posición del cuadro y gira sobre Y y, más despacio, sobre X,
 		//para que con el tiempo se vean sus seis caras
-		glm::mat4 baseHolocron(1.0);
+		baseHolocron = glm::mat4(1.0);
 		baseHolocron = glm::translate(baseHolocron, posHolocron);
 		baseHolocron = glm::rotate(baseHolocron, anguloHolocron * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		baseHolocron = glm::rotate(baseHolocron, 0.5f * anguloHolocron * toRadians, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -1010,10 +983,10 @@ int main(int argc, char** argv)
 		HolocronNucleo_M.RenderModel(uniformColor);
 		//Esquinas: la misma malla (octante +X +Y +Z) reflejada con escalas de -1 hacia los otros siete octantes.
 		//Cada una se aleja del centro sobre su diagonal y gira sobre ella según la apertura
-		for (int e = 0; e < 8; e++)
+		for (e = 0; e < 8; e++)
 		{
-			glm::vec3 signo((e & 1) ? -1.0f : 1.0f, (e & 2) ? -1.0f : 1.0f, (e & 4) ? -1.0f : 1.0f);
-			glm::vec3 diagonal = glm::normalize(signo);
+			signo = glm::vec3((e & 1) ? -1.0f : 1.0f, (e & 2) ? -1.0f : 1.0f, (e & 4) ? -1.0f : 1.0f);
+			diagonal = glm::normalize(signo);
 			model = glm::translate(baseHolocron, diagonal * SEPARACION_ESQUINAS * aperturaHolocron);
 			model = glm::rotate(model, GIRO_ESQUINAS * aperturaHolocron * toRadians, diagonal);
 			model = glm::scale(model, signo);
@@ -1064,10 +1037,10 @@ int main(int argc, char** argv)
 		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
 		fuegoTexture.UseTexture();
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		for (int m = 0; m < 2; m++)
+		for (m = 0; m < 2; m++)
 		{
-			if (!motorEncendido[m]) continue;
-			float parpadeo = capturando ? 1.0f : 1.0f + 0.12f * sinf(now * 23.0f + 2.0f * m);
+			if (!mainWindow.getMotor(m)) continue;
+			parpadeo = capturando ? 1.0f : 1.0f + 0.12f * sinf(now * 23.0f + 2.0f * m);
 			model = glm::translate(baseNave, TOBERA_NAVE[m]);
 			model = glm::scale(model, glm::vec3(0.24f, 0.24f, LARGO_LLAMA * parpadeo));
 			glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
