@@ -1,17 +1,14 @@
 /*
-Práctica 9: Animación Básica
+Ejercicio de Práctica 9-2: Animación Compleja
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
-Parte del código del ejercicio de clase 9 (rover de orilla a orilla del piso y avión en un circuito cerrado).
-Para la práctica se agregó:
-1. Una pista de carreras detrás de la escena: dos rectas unidas por dos curvas, y en la recta 1 una rampa de
-   subida, un tramo elevado y una rampa de bajada. La nave espacial de la práctica 8 ya no flota en un punto fijo:
-   recorre la pista sin detenerse, siempre apuntando hacia donde avanza; levanta la nariz al subir, la baja al
-   bajar y se ladea hacia adentro en las curvas. Sus luces y las llamas de sus motores van con ella.
-2. Un satélite, que es la sonda espacial de la práctica 4 (cuerpo, antena con su punta y cuatro extremidades
-   con pierna y pie), armado en jerarquía igual que en esa práctica. Vuela sobre la escena siguiendo un ocho y
-   gira hacia donde avanza. En la práctica 4 cada extremidad giraba con una tecla (Q, Z, X y C); ahora se
-   mueven solas, cada una con un desfase de 90° respecto a la anterior.
+Parte del código de la práctica 9 (nave en la pista de carreras y satélite en ocho). El avión ya no da vueltas en
+el circuito del ejercicio 9: ahora ejecuta un programa de acrobacias. El programa es un arreglo de maniobras
+(recta, rizo, tonel, medio rizo, medio tonel y tonel volado) que se recorre en orden; cada tipo de maniobra es una
+función que mueve la posición del avión y gira su frente y su techo. Con medio rizo y medio tonel se arman un
+Immelmann (sube y regresa en sentido contrario) y una Split-S (baja y regresa), así el programa termina donde
+empezó y se repite sin saltos. Atrás del avión queda una estela de humo, que son sus posiciones anteriores.
+El punto 2 del ejercicio (textura animada) se explicará la siguiente clase.
 
 Las teclas se procesan en Window::ManejaTeclado (Window.cpp), que guarda el estado de cada luz, el color de la
 luz del avión y la posición del holocrón; aquí solo se leen con los get de mainWindow. Las variables que se
@@ -160,18 +157,41 @@ const float VELOCIDAD_ROVER = 0.35f;
 float posRoverX = INICIO_ROVER_X;
 float sentidoRover = 1.0f;				//1: avanza hacia +X (su frente), -1: retrocede
 
-//Ejercicio 9: circuito del avión. Visto desde arriba es un estadio: recta hacia +X en z = centro + radio,
-//media vuelta, recta hacia -X en z = centro - radio y otra media vuelta. recorridoAvion es la distancia
-//avanzada sobre el circuito; solo aumenta, por eso el avión nunca vuela de reversa
-const glm::vec3 CENTRO_CIRCUITO(0.0f, 10.0f, -2.0f);
-const float MEDIA_RECTA = 12.0f;		//cada recta va de x = -12 a x = 12 respecto al centro
-const float RADIO_VUELTA = 8.0f;
-const float LARGO_RECTA = 2.0f * MEDIA_RECTA;
-const float LARGO_VUELTA = 3.14159265f * RADIO_VUELTA;
-const float LARGO_CIRCUITO = 2.0f * LARGO_RECTA + 2.0f * LARGO_VUELTA;
-const float INCLINACION_VUELTA = 25.0f;	//grados que se ladea a la mitad de cada vuelta
-const float VELOCIDAD_AVION = 0.15f;
-float recorridoAvion = 0.0f;
+//Ejercicio 9-2: programa de acrobacias del avión. Cada maniobra parte de la posición y orientación con que
+//terminó la anterior. largo es lo que avanza sobre su eje (recta, toneles y tonel volado) y radio el de los rizos
+//y el del tonel volado. Todo el programa queda en el plano z = 16, delante de la escena
+enum TipoManiobra { RECTA, RIZO, MEDIO_RIZO, TONEL, MEDIO_TONEL, TONEL_VOLADO };
+struct Maniobra
+{
+	TipoManiobra tipo;
+	float largo;
+	float radio;
+};
+const Maniobra PROGRAMA_ACROBACIAS[] = {
+	{ RECTA, 8.0f, 0.0f },
+	{ RIZO, 0.0f, 8.0f },			//rizo completo hacia arriba
+	{ RECTA, 6.0f, 0.0f },
+	{ TONEL, 14.0f, 0.0f },			//una vuelta completa sobre su eje largo
+	{ RECTA, 10.0f, 0.0f },
+	{ MEDIO_RIZO, 0.0f, 9.0f },		//Immelmann: medio rizo hacia arriba (queda de cabeza y de regreso)...
+	{ MEDIO_TONEL, 6.0f, 0.0f },	//...y medio tonel para quedar derecho
+	{ RECTA, 3.0f, 0.0f },
+	{ TONEL_VOLADO, 20.0f, 2.5f },	//vuelta alrededor de una línea que va por encima del avión
+	{ RECTA, 3.0f, 0.0f },
+	{ MEDIO_TONEL, 6.0f, 0.0f },	//Split-S: medio tonel para quedar de cabeza...
+	{ MEDIO_RIZO, 0.0f, 9.0f }		//...y medio rizo hacia abajo, de regreso al inicio
+};
+const int NUM_MANIOBRAS = sizeof(PROGRAMA_ACROBACIAS) / sizeof(PROGRAMA_ACROBACIAS[0]);
+const glm::vec3 INICIO_ACROBACIAS(-19.0f, 5.0f, 16.0f);	//el avión empieza derecho y hacia +X
+float largoManiobra[NUM_MANIOBRAS];		//se calculan una vez al inicio (PrepararAcrobacias)
+float largoPrograma = 0.0f;
+const float VELOCIDAD_AVION = 0.25f;
+float recorridoAvion = 0.0f;			//distancia avanzada sobre el programa; solo aumenta
+//Estela de humo: esferas en las posiciones por donde pasó la cola del avión
+const int PUNTOS_ESTELA = 70;
+const float SEPARACION_ESTELA = 0.6f;	//distancia sobre el programa entre una esfera y la siguiente
+const float TAMANO_ESTELA = 0.35f;		//radio de la primera esfera; las demás se hacen más chicas
+const float COLA_AVION = 2.3f;			//en el OBJ la cola está en z = -3.1, por la escala 0.75
 
 //Práctica 9: pista de carreras de la nave. Visto desde arriba es un óvalo: recta 1 hacia +X en z = centro + radio,
 //curva 1 del lado +X, recta 2 hacia -X en z = centro - radio y curva 2. La recta 1 tiene, en este orden, un tramo
@@ -449,42 +469,109 @@ void CrearFuego()
 }
 
 
-//Ejercicio 9: punto del circuito del avión a una distancia s del inicio (s puede ser mayor que el largo del
-//circuito, se toma el residuo). Regresa la posición, el rumbo (giro sobre Y para que su frente, +Z del modelo,
-//apunte en la dirección del movimiento) y la inclinación lateral en grados.
-//Tramos: recta hacia +X, vuelta del lado +X, recta hacia -X, vuelta del lado -X
-void PuntoCircuitoAvion(float s, glm::vec3& pos, float& rumbo, float& inclinacion)
+//Ejercicio 9-2: desplazamiento del tonel volado respecto a la línea recta, en los ejes derecho y arriba del avión,
+//para el ángulo a de 0 a 2pi. Sale y regresa a la línea con la dirección de la línea (derivada 0 en a = 0 y en
+//a = 2pi), así el avión no cambia de rumbo de golpe al entrar o salir de la maniobra
+glm::vec2 DesvioTonelVolado(float a, float radio)
 {
-	s = fmod(s, LARGO_CIRCUITO);
-	glm::vec3 dir;			//dirección del movimiento en el plano XZ
-	inclinacion = 0.0f;
-	if (s < LARGO_RECTA)
+	return radio * glm::vec2(sinf(a) * (1.0f - cosf(a)), 1.0f - cosf(a));
+}
+
+//Ejercicio 9-2: avanza d unidades dentro de la maniobra k del programa. p, f y u entran con la posición, el frente y el techo
+//del avión al empezar la maniobra y salen con los del punto d. r es el lado derecho del avión
+void AvanzarManiobra(int k, float d, glm::vec3& p, glm::vec3& f, glm::vec3& u)
+{
+	const float PI = 3.14159265f;
+	const Maniobra& m = PROGRAMA_ACROBACIAS[k];
+	glm::vec3 r = glm::cross(f, u), f0 = f, u0 = u;
+	float a, x;
+	switch (m.tipo)
 	{
-		pos = CENTRO_CIRCUITO + glm::vec3(-MEDIA_RECTA + s, 0.0f, RADIO_VUELTA);
-		dir = glm::vec3(1.0f, 0.0f, 0.0f);
-	}
-	else if (s < LARGO_RECTA + LARGO_VUELTA)
+	case RECTA:
+		p += f * d;
+		break;
+	case RIZO:
+	case MEDIO_RIZO:
+		//el frente gira hacia el techo: el avión describe un círculo de radio R en el plano de f y u
+		a = d / m.radio;
+		p += f0 * (m.radio * sinf(a)) + u0 * (m.radio * (1.0f - cosf(a)));
+		f = f0 * cosf(a) + u0 * sinf(a);
+		u = u0 * cosf(a) - f0 * sinf(a);
+		break;
+	case TONEL:
+	case MEDIO_TONEL:
+		//avanza en línea recta mientras el techo gira hacia la derecha: 2pi en el tonel y pi en el medio tonel
+		a = (m.tipo == TONEL ? 2.0f : 1.0f) * PI * d / m.largo;
+		p += f0 * d;
+		u = u0 * cosf(a) + r * sinf(a);
+		break;
+	case TONEL_VOLADO:
 	{
-		float a = (s - LARGO_RECTA) / RADIO_VUELTA;	//ángulo recorrido en la vuelta, de 0 a pi
-		pos = CENTRO_CIRCUITO + glm::vec3(MEDIA_RECTA + RADIO_VUELTA * sinf(a), 0.0f, RADIO_VUELTA * cosf(a));
-		dir = glm::vec3(cosf(a), 0.0f, -sinf(a));
-		inclinacion = INCLINACION_VUELTA * sinf(a);	//0 al entrar y al salir de la vuelta, máximo a la mitad
+		//x es lo que avanza sobre la línea y a el ángulo de la vuelta alrededor de ella
+		x = d * m.largo / largoManiobra[k];
+		a = 2.0f * PI * x / m.largo;
+		glm::vec2 o = DesvioTonelVolado(a, m.radio);
+		p += f0 * x + r * o.x + u0 * o.y;
+		//frente: la derivada de la trayectoria respecto a x
+		glm::vec2 dO = m.radio * glm::vec2(cosf(a) - cosf(2.0f * a), sinf(a)) * (2.0f * PI / m.largo);
+		f = glm::normalize(f0 + r * dO.x + u0 * dO.y);
+		//techo: apunta hacia la línea central de la vuelta (arriba del punto de entrada, a la distancia del radio)
+		glm::vec3 haciaEje = u0 * m.radio - (r * o.x + u0 * o.y);
+		if (glm::length(haciaEje) < 0.001f) haciaEje = u0;
+		u = glm::normalize(haciaEje - glm::dot(haciaEje, f) * f);
+		break;
 	}
-	else if (s < 2.0f * LARGO_RECTA + LARGO_VUELTA)
+	}
+}
+
+//Ejercicio 9-2: largo de cada maniobra sobre la trayectoria. El del tonel volado se mide sumando 400 tramos
+//rectos de su curva, porque no tiene una fórmula sencilla
+void PrepararAcrobacias()
+{
+	const float PI = 3.14159265f;
+	largoPrograma = 0.0f;
+	for (int k = 0; k < NUM_MANIOBRAS; k++)
 	{
-		float d = s - LARGO_RECTA - LARGO_VUELTA;
-		pos = CENTRO_CIRCUITO + glm::vec3(MEDIA_RECTA - d, 0.0f, -RADIO_VUELTA);
-		dir = glm::vec3(-1.0f, 0.0f, 0.0f);
+		const Maniobra& m = PROGRAMA_ACROBACIAS[k];
+		if (m.tipo == RIZO) largoManiobra[k] = 2.0f * PI * m.radio;
+		else if (m.tipo == MEDIO_RIZO) largoManiobra[k] = PI * m.radio;
+		else if (m.tipo == TONEL_VOLADO)
+		{
+			largoManiobra[k] = 0.0f;
+			glm::vec3 anterior(0.0f), actual;
+			for (int i = 1; i <= 400; i++)
+			{
+				glm::vec2 o = DesvioTonelVolado(2.0f * PI * i / 400.0f, m.radio);
+				actual = glm::vec3(m.largo * i / 400.0f, o.x, o.y);
+				largoManiobra[k] += glm::length(actual - anterior);
+				anterior = actual;
+			}
+		}
+		else largoManiobra[k] = m.largo;
+		largoPrograma += largoManiobra[k];
 	}
-	else
+}
+
+//Ejercicio 9-2: posición, frente y techo del avión a una distancia s del inicio del programa. Se parte del inicio
+//y se aplican completas las maniobras que ya terminaron; la última se aplica solo hasta donde va. Como siempre se
+//calcula desde el inicio, los errores de redondeo no se acumulan de una vuelta a otra
+void PoseAcrobacia(float s, glm::vec3& p, glm::vec3& f, glm::vec3& u)
+{
+	s = fmod(s, largoPrograma);
+	if (s < 0.0f) s += largoPrograma;	//la estela pide puntos de antes del inicio
+	p = INICIO_ACROBACIAS;
+	f = glm::vec3(1.0f, 0.0f, 0.0f);
+	u = glm::vec3(0.0f, 1.0f, 0.0f);
+	for (int k = 0; k < NUM_MANIOBRAS; k++)
 	{
-		float a = (s - 2.0f * LARGO_RECTA - LARGO_VUELTA) / RADIO_VUELTA;
-		pos = CENTRO_CIRCUITO + glm::vec3(-MEDIA_RECTA - RADIO_VUELTA * sinf(a), 0.0f, -RADIO_VUELTA * cosf(a));
-		dir = glm::vec3(-cosf(a), 0.0f, sinf(a));
-		inclinacion = INCLINACION_VUELTA * sinf(a);
+		if (s < largoManiobra[k])
+		{
+			AvanzarManiobra(k, s, p, f, u);
+			return;
+		}
+		AvanzarManiobra(k, largoManiobra[k], p, f, u);
+		s -= largoManiobra[k];
 	}
-	//girar sobre Y un ángulo r lleva +Z a (sen r, 0, cos r)
-	rumbo = atan2f(dir.x, dir.z);
 }
 
 
@@ -794,6 +881,7 @@ void DibujarExtremidad(glm::mat4 cuerpo, glm::vec3 esquina, float aperturaZ, flo
 //          --puntual con lin exp (luz roja), --spot con lin exp (luz verde fija),
 //          --color 0..5 (luz del avión), --holocron 0|1, --pinza 0|1, --holocronx x, --holocronang grados,
 //          --apertura 0..1 (esquinas del holocrón), --nave 0|1, --motor1 0|1, --motor2 0|1,
+//          --recorrido s también es la distancia del avión sobre el programa de acrobacias (ejercicio 9-2),
 //          --pista s (nave sobre la pista), --satelite t (parámetro del ocho), --fase f (extremidades, radianes)
 //------------------------------------------------------------------
 struct Captura
@@ -919,11 +1007,12 @@ int main(int argc, char** argv)
 	CrearFuego();
 	CrearPista();
 	CrearPiezasSonda();
+	PrepararAcrobacias();
 	CreateShaders();
 
-	//Práctica 9: la cámara empieza más atrás y más arriba que en el ejercicio, para que al abrir el programa se vean
-	//la pista (detrás de la escena) y el satélite (arriba)
-	camera = Camera(glm::vec3(0.0f, 8.0f, 34.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -3.0f, 0.3f, 0.5f);
+	//Ejercicio 9-2: la cámara empieza más atrás que en la práctica 9 para que se vean completas las acrobacias,
+	//que van de y = 5 a y = 28 en el plano z = 16
+	camera = Camera(glm::vec3(0.0f, 14.0f, 62.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -4.0f, 0.3f, 0.5f);
 
 	brickTexture = Texture("Textures/brick.png");
 	brickTexture.LoadTextureA();
@@ -1124,7 +1213,9 @@ int main(int argc, char** argv)
 	bool capturando = false;
 	glm::vec3 lowerLight, posFaroRover, posLuzPinza;
 	glm::vec3 posAvion, posLuzAvion, posFaroAvion, dirFaroAvion, dirFaroNave;
-	float rumboAvion = 0.0f, inclinacionAvion = 0.0f, giroLlantas = 0.0f, parpadeo = 1.0f;
+	float giroLlantas = 0.0f, parpadeo = 1.0f;
+	glm::vec3 frenteAvion, techoAvion, posEstela, frenteEstela, techoEstela;
+	float tamanoEstela = 0.0f;
 	glm::vec3 posNave, dirNave, posSatelite;
 	float rumboNave = 0.0f, cabeceoNave = 0.0f, inclinacionNave = 0.0f, rumboSatelite = 0.0f;
 	glm::mat4 baseRover(1.0), baseAvion(1.0), baseNave(1.0), baseHolocron(1.0), baseSatelite(1.0), cuerpoSatelite(1.0);
@@ -1168,8 +1259,8 @@ int main(int argc, char** argv)
 				posRoverX = LIMITE_ATRAS_ROVER;
 				sentidoRover = 1.0f;
 			}
-			//Ejercicio 9, avión: solo avanza sobre el circuito; fmod evita que el número crezca sin límite
-			recorridoAvion = fmod(recorridoAvion + VELOCIDAD_AVION * deltaTime, LARGO_CIRCUITO);
+			//Ejercicio 9-2, avión: solo avanza sobre el programa de acrobacias; fmod lo regresa al inicio
+			recorridoAvion = fmod(recorridoAvion + VELOCIDAD_AVION * deltaTime, largoPrograma);
 			//Práctica 9: la nave solo avanza sobre la pista; el satélite avanza sobre el ocho y sus extremidades oscilan
 			recorridoNave = fmod(recorridoNave + VELOCIDAD_NAVE * deltaTime, LARGO_PISTA);
 			anguloSatelite = fmod(anguloSatelite + VELOCIDAD_SATELITE * deltaTime, 2.0f * 3.14159265f);
@@ -1220,14 +1311,13 @@ int main(int argc, char** argv)
 		//la luz sube un poco cuando el holocrón está abierto para no quedar dentro de las esquinas de arriba
 		pointLights[2].SetPos(posHolocron + glm::vec3(0.0f, ALTURA_LUZ_HOLOCRON + 0.6f * aperturaHolocron, 0.0f));
 
-		//Ejercicio 9: el avión se coloca en su punto del circuito, se gira sobre Y con el rumbo y se ladea sobre
-		//su eje largo (Z del modelo). Las vueltas son a la izquierda y el ala izquierda es +X del modelo, por eso
-		//el ángulo es negativo: esa ala baja, hacia el centro de la vuelta
-		PuntoCircuitoAvion(recorridoAvion, posAvion, rumboAvion, inclinacionAvion);
+		//Ejercicio 9-2: el avión toma su pose del programa de acrobacias. Su orientación se arma directamente con los
+		//vectores: el ala izquierda (+X del modelo) es techo x frente, el techo es +Y y el frente (la hélice) es +Z
+		PoseAcrobacia(recorridoAvion, posAvion, frenteAvion, techoAvion);
 		baseAvion = glm::mat4(1.0);
 		baseAvion = glm::translate(baseAvion, posAvion);
-		baseAvion = glm::rotate(baseAvion, rumboAvion, glm::vec3(0.0f, 1.0f, 0.0f));
-		baseAvion = glm::rotate(baseAvion, -inclinacionAvion * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
+		baseAvion = baseAvion * glm::mat4(glm::vec4(glm::cross(techoAvion, frenteAvion), 0.0f), glm::vec4(techoAvion, 0.0f),
+			glm::vec4(frenteAvion, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 		baseAvion = glm::scale(baseAvion, glm::vec3(0.75f, 0.75f, 0.75f));
 		posLuzAvion = glm::vec3(baseAvion * glm::vec4(0.0f, -1.05f, 0.5f, 1.0f));	//debajo del fuselaje
 		spotLights[2].SetPos(posLuzAvion);
@@ -1333,11 +1423,27 @@ int main(int argc, char** argv)
 			Llanta_M[i].RenderModel(uniformColor);
 		}
 
-		//Avión de la práctica 6: recorre su circuito con sus dos luces
+		//Avión de la práctica 6: hace sus acrobacias con sus dos luces
 		model = baseAvion;
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Material_brillante.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		Avion_M.RenderModel(uniformColor);
+
+		//Ejercicio 9-2: estela de humo. Cada esfera es la cola del avión en un punto anterior del programa, calculado
+		//con la misma función; mientras más atrás, más chica, hasta desaparecer
+		plainTexture.UseTexture();
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		color = glm::vec3(0.95f, 0.95f, 1.0f);
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		for (i = 1; i <= PUNTOS_ESTELA; i++)
+		{
+			PoseAcrobacia(recorridoAvion - i * SEPARACION_ESTELA, posEstela, frenteEstela, techoEstela);
+			tamanoEstela = TAMANO_ESTELA * (1.0f - (float)i / (PUNTOS_ESTELA + 1));
+			model = glm::translate(glm::mat4(1.0), posEstela - frenteEstela * COLA_AVION);
+			model = glm::scale(model, glm::vec3(tamanoEstela));
+			glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+			meshListModel[12]->RenderMeshModel();
+		}
 
 		//LÁMPARA
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(modeloLampara));

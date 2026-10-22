@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(practica9_animacion CXX)
+project(ejercicio9_2_animacion CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,8 +28,8 @@ if(NOT GLM_INCLUDE_DIR)
 	message(FATAL_ERROR "No se encontro glm. Instala con: brew install glm")
 endif()
 
-add_executable(practica9
-	practica9.cpp
+add_executable(ejercicio9_2
+	ejercicio9_2.cpp
 	Camera.cpp
 	Window.cpp
 	Shader_light.cpp
@@ -45,7 +45,7 @@ add_executable(practica9
 )
 
 # Los fuentes del curso incluyen <glew.h>, <glfw3.h> y <glm.hpp> sin carpeta
-target_include_directories(practica9 PRIVATE
+target_include_directories(ejercicio9_2 PRIVATE
 	${GLFW_INCLUDE_DIRS}
 	${GLFW_INCLUDE_DIRS}/GLFW
 	${GLEW_INCLUDE_DIRS}
@@ -55,14 +55,14 @@ target_include_directories(practica9 PRIVATE
 )
 
 if(ASSIMP_FOUND)
-	target_include_directories(practica9 PRIVATE ${ASSIMP_INCLUDE_DIRS})
-	target_link_libraries(practica9 PRIVATE PkgConfig::ASSIMP)
+	target_include_directories(ejercicio9_2 PRIVATE ${ASSIMP_INCLUDE_DIRS})
+	target_link_libraries(ejercicio9_2 PRIVATE PkgConfig::ASSIMP)
 else()
-	target_include_directories(practica9 PRIVATE ${ASSIMP_INCLUDE_DIR})
-	target_link_libraries(practica9 PRIVATE ${ASSIMP_LIBRARY})
+	target_include_directories(ejercicio9_2 PRIVATE ${ASSIMP_INCLUDE_DIR})
+	target_link_libraries(ejercicio9_2 PRIVATE ${ASSIMP_LIBRARY})
 endif()
 
-target_link_libraries(practica9 PRIVATE
+target_link_libraries(ejercicio9_2 PRIVATE
 	PkgConfig::GLFW
 	PkgConfig::GLEW
 	OpenGL::GL
@@ -70,14 +70,14 @@ target_link_libraries(practica9 PRIVATE
 
 # Copiar shaders, modelos y texturas junto al ejecutable para que funcionen
 # las rutas relativas ("shaders/...", "Models/...", "Textures/...").
-add_custom_command(TARGET practica9 POST_BUILD
+add_custom_command(TARGET ejercicio9_2 POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/shaders
-		$<TARGET_FILE_DIR:practica9>/shaders
+		$<TARGET_FILE_DIR:ejercicio9_2>/shaders
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/Models
-		$<TARGET_FILE_DIR:practica9>/Models
+		$<TARGET_FILE_DIR:ejercicio9_2>/Models
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/Textures
-		$<TARGET_FILE_DIR:practica9>/Textures
+		$<TARGET_FILE_DIR:ejercicio9_2>/Textures
 )

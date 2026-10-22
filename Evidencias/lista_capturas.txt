@@ -1,25 +1,18 @@
-# archivo  opciones   (pista: recta 1 en z = -12 de x = -25 a 25, rampas entre s = 7 y s = 43; satélite: centro (0, 16, -10))
-../../_trabajo/ppm/g_general.ppm --linterna 0 --pista 13 --satelite 0.4 --fase 0.8 --recorrido 12
-../../_trabajo/ppm/p_arriba.ppm --linterna 0 --pista 65.7 --satelite 2.5 --camara 0 52 10 -90 -60
-../../_trabajo/ppm/p_rampa_lado.ppm --linterna 0 --pista 25 --satelite 2.5 --camara 0 3 -38 90 2
-../../_trabajo/ppm/n_plano.ppm --linterna 0 --pista 3 --satelite 2.5 --camara -22 2 -22 90 6
-../../_trabajo/ppm/n_subida.ppm --linterna 0 --pista 13 --satelite 2.5 --camara -12 2 -22 90 8
-../../_trabajo/ppm/n_elevado.ppm --linterna 0 --pista 25 --satelite 2.5 --camara 0 3.5 -22 90 8
-../../_trabajo/ppm/n_bajada.ppm --linterna 0 --pista 37 --satelite 2.5 --camara 12 2 -22 90 8
-../../_trabajo/ppm/n_curva.ppm --linterna 0 --pista 65.7 --satelite 2.5 --camara 35 2.5 -10 -90 -8
-../../_trabajo/ppm/n_arriba_1.ppm --linterna 0 --pista 3 --satelite 2.5 --camara 0 52 10 -90 -60
-../../_trabajo/ppm/n_arriba_2.ppm --linterna 0 --pista 25 --satelite 2.5 --camara 0 52 10 -90 -60
-../../_trabajo/ppm/n_arriba_3.ppm --linterna 0 --pista 55 --satelite 2.5 --camara 0 52 10 -90 -60
-../../_trabajo/ppm/n_arriba_4.ppm --linterna 0 --pista 65.7 --satelite 2.5 --camara 0 52 10 -90 -60
-../../_trabajo/ppm/n_arriba_5.ppm --linterna 0 --pista 100 --satelite 2.5 --camara 0 52 10 -90 -60
-../../_trabajo/ppm/n_arriba_6.ppm --linterna 0 --pista 147.1 --satelite 2.5 --camara 0 52 10 -90 -60
-../../_trabajo/ppm/s_fase_1.ppm --linterna 0 --satelite 0 --fase 0 --camara 0 17.3 1 -90 -1
-../../_trabajo/ppm/s_fase_2.ppm --linterna 0 --satelite 0 --fase 1.5708 --camara 0 17.3 1 -90 -1
-../../_trabajo/ppm/s_fase_3.ppm --linterna 0 --satelite 0 --fase 3.1416 --camara 0 17.3 1 -90 -1
-../../_trabajo/ppm/s_fase_4.ppm --linterna 0 --satelite 0 --fase 4.7124 --camara 0 17.3 1 -90 -1
-../../_trabajo/ppm/s_arriba_1.ppm --linterna 0 --satelite 0 --camara 0 58 1 -90 -75
-../../_trabajo/ppm/s_arriba_2.ppm --linterna 0 --satelite 0.8 --camara 0 58 1 -90 -75
-../../_trabajo/ppm/s_arriba_3.ppm --linterna 0 --satelite 1.5708 --camara 0 58 1 -90 -75
-../../_trabajo/ppm/s_arriba_4.ppm --linterna 0 --satelite 2.4 --camara 0 58 1 -90 -75
-../../_trabajo/ppm/s_arriba_5.ppm --linterna 0 --satelite 3.1416 --camara 0 58 1 -90 -75
-../../_trabajo/ppm/s_arriba_6.ppm --linterna 0 --satelite 4.7124 --camara 0 58 1 -90 -75
+# archivo  opciones   (acrobacias en el plano z = 16; --recorrido s es la distancia del avión sobre el programa, 190.17 en total)
+../../_trabajo/ppm/g_general.ppm --linterna 0 --recorrido 33.1
+../../_trabajo/ppm/lado_1.ppm --linterna 0 --recorrido 58.2 --camara 0 16.5 58 -90 0
+../../_trabajo/ppm/lado_2.ppm --linterna 0 --recorrido 78.2 --camara 0 16.5 58 -90 0
+../../_trabajo/ppm/lado_3.ppm --linterna 0 --recorrido 116.5 --camara 0 16.5 58 -90 0
+../../_trabajo/ppm/lado_4.ppm --linterna 0 --recorrido 125.5 --camara 0 16.5 58 -90 0
+../../_trabajo/ppm/lado_5.ppm --linterna 0 --recorrido 152.8 --camara 0 16.5 58 -90 0
+../../_trabajo/ppm/lado_6.ppm --linterna 0 --recorrido 190.1 --camara 0 16.5 58 -90 0
+../../_trabajo/ppm/cerca_rizo.ppm --linterna 0 --recorrido 33.1 --camara -11 21 30 -90 0
+../../_trabajo/ppm/tonel_1.ppm --linterna 0 --recorrido 64.3 --camara -13 6.5 16 0 -4
+../../_trabajo/ppm/tonel_2.ppm --linterna 0 --recorrido 67.77 --camara -13 6.5 16 0 -4
+../../_trabajo/ppm/tonel_3.ppm --linterna 0 --recorrido 71.27 --camara -13 6.5 16 0 -4
+../../_trabajo/ppm/tonel_4.ppm --linterna 0 --recorrido 74.77 --camara -13 6.5 16 0 -4
+../../_trabajo/ppm/immelmann.ppm --linterna 0 --recorrido 102.4 --camara 28 14 30 -90 0
+../../_trabajo/ppm/volado_1.ppm --linterna 0 --recorrido 132.4 --camara 18 25.5 16 180 0
+../../_trabajo/ppm/volado_2.ppm --linterna 0 --recorrido 139.2 --camara 18 25.5 16 180 0
+../../_trabajo/ppm/volado_3.ppm --linterna 0 --recorrido 146 --camara 18 25.5 16 180 0
+../../_trabajo/ppm/split_s.ppm --linterna 0 --recorrido 176 --camara -28 14 30 -90 0
