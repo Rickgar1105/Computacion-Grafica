@@ -1,21 +1,25 @@
-# Ejercicio de práctica 9: Animación básica
+# Práctica 9: Animación básica
 
-Parte del código de la práctica 8. El rover y el avión ya no se mueven con el teclado: se animan solos.
+Parte del código del ejercicio de clase 9 (rover de orilla a orilla del piso y avión en un circuito cerrado).
 
-- Rover: recorre el piso en X en un ciclo infinito. Avanza hasta que su frente llega a la orilla del plano
-  (x = 300), retrocede hasta que su parte trasera llega a la orilla contraria (x = -300) y vuelve a avanzar.
-  Las llantas giran según la distancia recorrida, al revés cuando retrocede.
-- Avión: vuela en un circuito cerrado (dos rectas y dos medias vueltas, a 10 de altura). Siempre apunta hacia
-  donde avanza, nunca vuela de reversa, y se ladea hacia adentro en las vueltas. Su faro gira con él.
+- Nave (práctica 8): recorre una pista de carreras detrás de la escena, con dos rectas, dos curvas y, en la
+  recta 1, una rampa de subida, un tramo elevado a 4 unidades y una rampa de bajada. Siempre apunta hacia donde
+  avanza, levanta o baja la nariz en las rampas y se ladea hacia adentro en las curvas. Sus luces y las llamas
+  de los motores van con ella. La malla de la pista y sus muros se generan con la misma función que mueve a la
+  nave (PuntoPista).
+- Satélite (sonda espacial de la práctica 4, misma jerarquía): vuela sobre la escena siguiendo un ocho y gira
+  hacia donde avanza. Sus cuatro extremidades, que en la práctica 4 se movían con Q, Z, X y C, oscilan solas
+  ±30° con 90° de desfase entre una y otra.
+- El rover y el avión siguen animados como en el ejercicio 9.
 
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
 ## Compilar (macOS, Homebrew: glfw, glew, glm, assimp)
 
-    cd Ejercicio9
+    cd Practica9
     cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
     cmake --build build
-    cd build && ./ejercicio9
+    cd build && ./practica9
 
 ## Controles
 
@@ -31,10 +35,11 @@ Ricardo Emmanuel Galicia Tequianes - 118001740
 
 ## Capturas
 
-`./ejercicio9 --capturas ../Evidencias/lista_capturas.txt` recorre la lista dentro de la misma
+`./practica9 --capturas ../Evidencias/lista_capturas.txt` recorre la lista dentro de la misma
 ventana y guarda cada vista como .ppm en la carpeta build; mientras toma las capturas la animación se detiene
 y el estado sale de la lista (opciones del ejercicio 9: --rover x, --sentido 1|-1, --recorrido s, donde s es la
-distancia avanzada por el avión sobre su circuito). Con --salir el programa se cierra al terminar la lista.
+distancia avanzada por el avión sobre su circuito; de la práctica 9: --pista s para la nave, --satelite t para
+el parámetro del ocho y --fase f para las extremidades, en radianes). Con --salir el programa se cierra al terminar la lista.
 
 ## Archivos
 
@@ -47,4 +52,6 @@ distancia avanzada por el avión sobre su circuito). Con --salir el programa se 
   proyección de caja (herramientas/nave_uv.py). Texturas nave_*.png y fuego_plasma.png generadas con
   herramientas/texturas_nave.py.
 - Models/lampara.obj: light-curved de Kenney, City Kit (Roads), licencia CC0.
-- Evidencias: capturas usadas en los documentos.
+- Textures/pista.png y Textures/pista_muro.png: texturas de la pista y de sus muros, generadas con
+  herramientas/texturas_pista.py.
+- Evidencias: capturas usadas en el reporte.

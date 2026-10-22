@@ -1,15 +1,17 @@
 /*
-Ejercicio de Práctica 9: Animación Básica
+Práctica 9: Animación Básica
 Ricardo Emmanuel Galicia Tequianes - 118001740
 
-Se parte del código de la práctica 8 (rover, avión, holocrón, nave y sus luces). El rover y el avión ya no se
-mueven con el teclado, ahora se animan solos:
-- El rover recorre el piso a lo largo de X en un ciclo infinito: avanza hasta que su frente llega a la orilla
-  del plano, retrocede hasta que su parte trasera llega a la orilla contraria y vuelve a avanzar. Las seis
-  llantas giran según la distancia recorrida, hacia un lado al avanzar y hacia el otro al retroceder.
-- El avión vuela en un circuito cerrado: dos rectas unidas por dos medias vueltas. Siempre apunta en la
-  dirección en la que avanza (nunca vuela de reversa) y se inclina hacia adentro en cada vuelta.
-  Sus dos spotlight (la de abajo y el faro) van con él y el faro gira con su rumbo.
+Parte del código del ejercicio de clase 9 (rover de orilla a orilla del piso y avión en un circuito cerrado).
+Para la práctica se agregó:
+1. Una pista de carreras detrás de la escena: dos rectas unidas por dos curvas, y en la recta 1 una rampa de
+   subida, un tramo elevado y una rampa de bajada. La nave espacial de la práctica 8 ya no flota en un punto fijo:
+   recorre la pista sin detenerse, siempre apuntando hacia donde avanza; levanta la nariz al subir, la baja al
+   bajar y se ladea hacia adentro en las curvas. Sus luces y las llamas de sus motores van con ella.
+2. Un satélite, que es la sonda espacial de la práctica 4 (cuerpo, antena con su punta y cuatro extremidades
+   con pierna y pie), armado en jerarquía igual que en esa práctica. Vuela sobre la escena siguiendo un ocho y
+   gira hacia donde avanza. En la práctica 4 cada extremidad giraba con una tecla (Q, Z, X y C); ahora se
+   mueven solas, cada una con un desfase de 90° respecto a la anterior.
 
 Las teclas se procesan en Window::ManejaTeclado (Window.cpp), que guarda el estado de cada luz, el color de la
 luz del avión y la posición del holocrón; aquí solo se leen con los get de mainWindow. Las variables que se
@@ -97,6 +99,9 @@ Model Lampara_M;
 //Nave espacial de la práctica 8 y textura de la llama de sus motores
 Model Nave_M;
 Texture fuegoTexture;
+//Práctica 9: texturas de la pista y de los muros de su parte elevada (herramientas/texturas_pista.py)
+Texture pistaTexture;
+Texture muroTexture;
 
 
 Skybox skybox;
@@ -168,6 +173,42 @@ const float INCLINACION_VUELTA = 25.0f;	//grados que se ladea a la mitad de cada
 const float VELOCIDAD_AVION = 0.15f;
 float recorridoAvion = 0.0f;
 
+//Práctica 9: pista de carreras de la nave. Visto desde arriba es un óvalo: recta 1 hacia +X en z = centro + radio,
+//curva 1 del lado +X, recta 2 hacia -X en z = centro - radio y curva 2. La recta 1 tiene, en este orden, un tramo
+//plano, la rampa de subida, el tramo elevado, la rampa de bajada y otro tramo plano.
+//recorridoNave es la distancia avanzada sobre la pista; solo aumenta, por eso la nave siempre va hacia adelante
+const glm::vec3 CENTRO_PISTA(0.0f, -0.97f, -22.0f);	//un poco arriba del piso (y = -1) para que no parpadeen
+const float MEDIA_RECTA_PISTA = 25.0f;		//cada recta va de x = -25 a x = 25
+const float RADIO_CURVA_PISTA = 10.0f;
+const float ANCHO_PISTA = 7.0f;
+const float LARGO_RECTA_PISTA = 2.0f * MEDIA_RECTA_PISTA;
+const float LARGO_CURVA_PISTA = 3.14159265f * RADIO_CURVA_PISTA;
+const float LARGO_PISTA = 2.0f * LARGO_RECTA_PISTA + 2.0f * LARGO_CURVA_PISTA;
+const float INICIO_SUBIDA = 7.0f;			//distancia desde el inicio de la recta 1
+const float LARGO_RAMPA = 12.0f;
+const float LARGO_ELEVADO = 12.0f;
+const float ALTURA_RAMPA = 4.0f;
+const float INICIO_BAJADA = INICIO_SUBIDA + LARGO_RAMPA + LARGO_ELEVADO;
+const float INCLINACION_CURVA_NAVE = 20.0f;	//grados que se ladea la nave a la mitad de cada curva
+const float ALTURA_NAVE_PISTA = 0.4f;		//la nave flota un poco arriba de la pista
+const float VELOCIDAD_NAVE = 0.3f;
+float recorridoNave = 0.0f;
+
+//Práctica 9: satélite (la sonda espacial de la práctica 4). Vuela sobre la escena siguiendo un ocho:
+//x = A·sen t, z = B·sen t·cos t, y además sube y baja con cos t. anguloSatelite es el parámetro t
+const glm::vec3 CENTRO_SATELITE(0.0f, 16.0f, -10.0f);
+const float ANCHO_OCHO = 26.0f;			//A: el ocho va de x = -26 a x = 26
+const float FONDO_OCHO = 24.0f;			//B: en z va de -12 a 12 respecto al centro
+const float ONDA_SATELITE = 1.5f;
+const float VELOCIDAD_SATELITE = 0.004f;	//radianes de t por cuadro
+const float ESCALA_SATELITE = 1.0f;		//en la práctica 4 se escalaba 2.2 para verla de cerca
+float anguloSatelite = 0.0f;
+//Extremidades del satélite: en la práctica 4 cada una giraba con su tecla; ahora oscilan solas ±30° alrededor de
+//su posición original, cada una con 90° de desfase respecto a la anterior
+const float AMPLITUD_EXTREMIDADES = 30.0f;		//grados
+const float VELOCIDAD_EXTREMIDADES = 0.035f;	//radianes de fase por cuadro, un ciclo cada ~3 s a 60 fps
+float faseExtremidades = 0.0f;
+
 //Ejercicio de práctica 8
 //Colores de la luz inferior del avión, en el orden en que se recorren con C
 const glm::vec3 COLORES_LUZ_AVION[6] = {
@@ -194,8 +235,8 @@ glm::vec3 posHolocron = INICIO_HOLOCRON;
 const glm::vec3 PUNTA_PINZA(2.45f, 12.55f, -0.95f);
 
 //Práctica 8: nave espacial. En el OBJ la nave mide 2 x 0.8 x 2.1, su frente es +Z y sus dos toberas están
-//atrás en (±0.35, 0.25, -1.05). Motor 1 = izquierdo (+X del modelo), motor 2 = derecho (-X)
-const glm::vec3 POS_NAVE(-2.0f, 4.0f, -9.0f);
+//atrás en (±0.35, 0.25, -1.05). Motor 1 = izquierdo (+X del modelo), motor 2 = derecho (-X).
+//En la práctica 9 su posición ya no es fija: sale de la pista (ver PuntoPista)
 const float ESCALA_NAVE = 2.0f;
 const glm::vec3 TOBERA_NAVE[2] = { glm::vec3(0.35f, 0.25f, -1.05f), glm::vec3(-0.35f, 0.25f, -1.05f) };
 const float LARGO_LLAMA = 0.9f;			//en unidades del modelo
@@ -447,13 +488,313 @@ void PuntoCircuitoAvion(float s, glm::vec3& pos, float& rumbo, float& inclinacio
 }
 
 
+//Práctica 9: altura de la recta 1 a una distancia d de su inicio y su pendiente (lo que sube por unidad que avanza).
+//Cada rampa sigue medio periodo de un coseno: empieza y termina con pendiente 0, así la nave no cambia de
+//inclinación de golpe al entrar o al salir de ella
+float AlturaRecta1(float d, float& pendiente)
+{
+	float u;
+	pendiente = 0.0f;
+	if (d < INICIO_SUBIDA || d >= INICIO_BAJADA + LARGO_RAMPA)
+		return 0.0f;						//tramos planos
+	if (d < INICIO_SUBIDA + LARGO_RAMPA)	//rampa de subida
+	{
+		u = 3.14159265f * (d - INICIO_SUBIDA) / LARGO_RAMPA;
+		pendiente = 0.5f * ALTURA_RAMPA * sinf(u) * 3.14159265f / LARGO_RAMPA;
+		return 0.5f * ALTURA_RAMPA * (1.0f - cosf(u));
+	}
+	if (d < INICIO_BAJADA)
+		return ALTURA_RAMPA;				//tramo elevado
+	u = 3.14159265f * (d - INICIO_BAJADA) / LARGO_RAMPA;	//rampa de bajada
+	pendiente = -0.5f * ALTURA_RAMPA * sinf(u) * 3.14159265f / LARGO_RAMPA;
+	return 0.5f * ALTURA_RAMPA * (1.0f + cosf(u));
+}
+
+
+//Práctica 9: punto de la pista a una distancia s del inicio (s puede ser mayor que el largo de la pista, se toma el
+//residuo). Regresa la posición sobre la superficie, la dirección del movimiento (unitaria; en las rampas también
+//sube o baja) y la inclinación lateral de la nave en grados. Mismos tramos que el circuito del avión
+void PuntoPista(float s, glm::vec3& pos, glm::vec3& dir, float& inclinacion)
+{
+	float pendiente = 0.0f, a, d;
+	s = fmod(s, LARGO_PISTA);
+	inclinacion = 0.0f;
+	if (s < LARGO_RECTA_PISTA)
+	{
+		pos = CENTRO_PISTA + glm::vec3(-MEDIA_RECTA_PISTA + s, AlturaRecta1(s, pendiente), RADIO_CURVA_PISTA);
+		dir = glm::normalize(glm::vec3(1.0f, pendiente, 0.0f));
+	}
+	else if (s < LARGO_RECTA_PISTA + LARGO_CURVA_PISTA)
+	{
+		a = (s - LARGO_RECTA_PISTA) / RADIO_CURVA_PISTA;	//ángulo recorrido en la curva, de 0 a pi
+		pos = CENTRO_PISTA + glm::vec3(MEDIA_RECTA_PISTA + RADIO_CURVA_PISTA * sinf(a), 0.0f, RADIO_CURVA_PISTA * cosf(a));
+		dir = glm::vec3(cosf(a), 0.0f, -sinf(a));
+		inclinacion = INCLINACION_CURVA_NAVE * sinf(a);
+	}
+	else if (s < 2.0f * LARGO_RECTA_PISTA + LARGO_CURVA_PISTA)
+	{
+		d = s - LARGO_RECTA_PISTA - LARGO_CURVA_PISTA;
+		pos = CENTRO_PISTA + glm::vec3(MEDIA_RECTA_PISTA - d, 0.0f, -RADIO_CURVA_PISTA);
+		dir = glm::vec3(-1.0f, 0.0f, 0.0f);
+	}
+	else
+	{
+		a = (s - 2.0f * LARGO_RECTA_PISTA - LARGO_CURVA_PISTA) / RADIO_CURVA_PISTA;
+		pos = CENTRO_PISTA + glm::vec3(-MEDIA_RECTA_PISTA - RADIO_CURVA_PISTA * sinf(a), 0.0f, -RADIO_CURVA_PISTA * cosf(a));
+		dir = glm::vec3(-cosf(a), 0.0f, sinf(a));
+		inclinacion = INCLINACION_CURVA_NAVE * sinf(a);
+	}
+}
+
+
+//Práctica 9: malla de la pista. Se recorre el circuito cada 0.25 unidades con PuntoPista y en cada punto se ponen
+//dos vértices, uno en cada orilla, a ANCHO_PISTA/2 del centro y hacia los lados de la dirección del movimiento.
+//u va de 0 a 1 de una orilla a la otra y v crece con la distancia. En la recta 1, desde que empieza la subida hasta
+//que termina la bajada, también se arman los dos muros laterales, de la orilla de la pista hasta el piso
+void CrearPista()
+{
+	std::vector<GLfloat> v, vm;
+	std::vector<unsigned int> idx, idxm;
+	const float PASO = 0.25f;
+	const int n = (int)(LARGO_PISTA / PASO);
+	//número entero de repeticiones de la textura (una cada ~4 unidades) para que no se corte donde cierra la pista
+	const float REPETICIONES = roundf(LARGO_PISTA / 4.0f);
+	glm::vec3 pos, dir, lado, normal, orilla[2];
+	float incl, s, t, pendiente;
+	unsigned int base;
+	for (int i = 0; i <= n; i++)
+	{
+		s = (i == n) ? 0.0f : i * PASO;		//el último punto es el primero, así la pista queda cerrada
+		PuntoPista(s, pos, dir, incl);
+		lado = glm::normalize(glm::cross(dir, glm::vec3(0.0f, 1.0f, 0.0f)));	//hacia la derecha de la nave
+		normal = glm::cross(lado, dir);			//normal exterior de la superficie (hacia arriba)
+		t = REPETICIONES * (i == n ? 1.0f : s / LARGO_PISTA);
+		orilla[0] = pos - lado * (0.5f * ANCHO_PISTA);
+		orilla[1] = pos + lado * (0.5f * ANCHO_PISTA);
+		//la normal se guarda hacia el interior, igual que en el piso y en el dado
+		v.insert(v.end(), { orilla[0].x, orilla[0].y, orilla[0].z, 0.0f, t, -normal.x, -normal.y, -normal.z });
+		v.insert(v.end(), { orilla[1].x, orilla[1].y, orilla[1].z, 1.0f, t, -normal.x, -normal.y, -normal.z });
+		if (i > 0)
+		{
+			base = 2 * (i - 1);
+			idx.insert(idx.end(), { base, base + 1, base + 3, base, base + 3, base + 2 });
+		}
+	}
+	MeshModel* pista = new MeshModel();
+	pista->CreateMeshModel(v.data(), idx.data(), (unsigned int)v.size(), (unsigned int)idx.size());
+	meshListModel.push_back(pista);	//meshListModel[6]
+
+	//Muros: por cada punto, arriba y abajo de cada orilla. u avanza con la distancia; v va de 0 en el piso
+	//a 1 a la altura del tramo elevado (ahí la textura tiene una franja roja y blanca)
+	int k = 0;
+	for (s = INICIO_SUBIDA; s <= INICIO_BAJADA + LARGO_RAMPA + 0.001f; s += PASO, k++)
+	{
+		PuntoPista(s, pos, dir, incl);
+		AlturaRecta1(s, pendiente);
+		lado = glm::vec3(0.0f, 0.0f, 1.0f);	//en la recta 1 la nave avanza hacia +X, su derecha es +Z
+		for (int m = 0; m < 2; m++)
+		{
+			glm::vec3 arriba = pos + lado * (m == 0 ? -0.5f : 0.5f) * ANCHO_PISTA;
+			glm::vec3 nExt = lado * (m == 0 ? -1.0f : 1.0f);
+			vm.insert(vm.end(), { arriba.x, arriba.y, arriba.z, s / 4.0f, (arriba.y - CENTRO_PISTA.y) / ALTURA_RAMPA, -nExt.x, -nExt.y, -nExt.z });
+			vm.insert(vm.end(), { arriba.x, CENTRO_PISTA.y, arriba.z, s / 4.0f, 0.0f, -nExt.x, -nExt.y, -nExt.z });
+		}
+		if (k > 0)
+		{
+			base = 4 * (k - 1);	//vértices del punto anterior: base..base+3; del actual: base+4..base+7
+			for (unsigned int m = 0; m < 2; m++)
+				idxm.insert(idxm.end(), { base + 2 * m, base + 2 * m + 1, base + 2 * m + 5, base + 2 * m, base + 2 * m + 5, base + 2 * m + 4 });
+		}
+	}
+	MeshModel* muros = new MeshModel();
+	muros->CreateMeshModel(vm.data(), idxm.data(), (unsigned int)vm.size(), (unsigned int)idxm.size());
+	meshListModel.push_back(muros);	//meshListModel[7]
+}
+
+
+//Práctica 9: piezas de la sonda espacial de la práctica 4 (el satélite). Son las mismas figuras y medidas de esa
+//práctica: cubo de lado 1, cilindro de radio 1 y alto 1, cono de radio 2 y alto 1, pirámide cuadrangular de lado 1 y
+//esfera de radio 1, todas centradas en el origen. Allá solo tenían posición; aquí llevan UV y normales para el
+//shader de iluminación, y como en AgregarCara la normal se guarda hacia el interior
+void AgregarVerticeSonda(std::vector<GLfloat>& v, glm::vec3 p, float u, float t, glm::vec3 normalExterior)
+{
+	v.insert(v.end(), { p.x, p.y, p.z, u, t, -normalExterior.x, -normalExterior.y, -normalExterior.z });
+}
+
+void GuardarPiezaSonda(std::vector<GLfloat>& v, std::vector<unsigned int>& idx)
+{
+	MeshModel* pieza = new MeshModel();
+	pieza->CreateMeshModel(v.data(), idx.data(), (unsigned int)v.size(), (unsigned int)idx.size());
+	meshListModel.push_back(pieza);
+	v.clear();
+	idx.clear();
+}
+
+void CrearPiezasSonda()
+{
+	const float PI = 3.14159265f;
+	const int RES = 24;		//lados del cilindro y del cono (en la práctica 4 el cilindro tenía 5)
+	std::vector<GLfloat> v;
+	std::vector<unsigned int> idx;
+	unsigned int b;
+	float ang;
+
+	//Cubo: 4 vértices por cara para que cada cara tenga su propia normal
+	const glm::vec3 normalesCubo[6] = { {0, 0, 1}, {0, 0, -1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0} };
+	for (const glm::vec3& n : normalesCubo)
+	{
+		glm::vec3 e1 = (fabsf(n.y) > 0.5f) ? glm::vec3(1, 0, 0) : glm::vec3(0, 1, 0);	//dos ejes sobre la cara
+		glm::vec3 e2 = glm::cross(n, e1);
+		b = (unsigned int)(v.size() / 8);
+		AgregarVerticeSonda(v, 0.5f * (n - e1 - e2), 0, 0, n);
+		AgregarVerticeSonda(v, 0.5f * (n + e1 - e2), 1, 0, n);
+		AgregarVerticeSonda(v, 0.5f * (n + e1 + e2), 1, 1, n);
+		AgregarVerticeSonda(v, 0.5f * (n - e1 + e2), 0, 1, n);
+		idx.insert(idx.end(), { b, b + 1, b + 2, b, b + 2, b + 3 });
+	}
+	GuardarPiezaSonda(v, idx);	//meshListModel[8]
+
+	//Cilindro: pared con normales hacia afuera del eje y dos tapas
+	for (int k = 0; k <= RES; k++)
+	{
+		ang = 2.0f * PI * k / RES;
+		glm::vec3 n(cosf(ang), 0.0f, sinf(ang));
+		AgregarVerticeSonda(v, glm::vec3(n.x, -0.5f, n.z), (float)k / RES, 0, n);
+		AgregarVerticeSonda(v, glm::vec3(n.x, 0.5f, n.z), (float)k / RES, 1, n);
+		if (k > 0)
+		{
+			b = 2 * (k - 1);
+			idx.insert(idx.end(), { b, b + 1, b + 3, b, b + 3, b + 2 });
+		}
+	}
+	for (float y : { -0.5f, 0.5f })
+	{
+		b = (unsigned int)(v.size() / 8);	//centro de la tapa
+		AgregarVerticeSonda(v, glm::vec3(0.0f, y, 0.0f), 0.5f, 0.5f, glm::vec3(0.0f, 2.0f * y, 0.0f));
+		for (int k = 0; k <= RES; k++)
+		{
+			ang = 2.0f * PI * k / RES;
+			AgregarVerticeSonda(v, glm::vec3(cosf(ang), y, sinf(ang)), 0.5f + 0.5f * cosf(ang), 0.5f + 0.5f * sinf(ang), glm::vec3(0.0f, 2.0f * y, 0.0f));
+			if (k > 0) idx.insert(idx.end(), { b, b + k, b + k + 1 });
+		}
+	}
+	GuardarPiezaSonda(v, idx);	//meshListModel[9]
+
+	//Cono de radio 2 (como CrearCono(25, 2.0) de la práctica 4): la normal de la pared es perpendicular a la
+	//generatriz, (cos, R/alto, sen) normalizada; la punta se repite en cada lado para llevar su propia normal
+	for (int k = 0; k < RES; k++)
+	{
+		float a0 = 2.0f * PI * k / RES, a1 = 2.0f * PI * (k + 1) / RES, am = 0.5f * (a0 + a1);
+		b = (unsigned int)(v.size() / 8);
+		AgregarVerticeSonda(v, glm::vec3(2.0f * cosf(a0), -0.5f, 2.0f * sinf(a0)), (float)k / RES, 0, glm::normalize(glm::vec3(cosf(a0), 2.0f, sinf(a0))));
+		AgregarVerticeSonda(v, glm::vec3(2.0f * cosf(a1), -0.5f, 2.0f * sinf(a1)), (float)(k + 1) / RES, 0, glm::normalize(glm::vec3(cosf(a1), 2.0f, sinf(a1))));
+		AgregarVerticeSonda(v, glm::vec3(0.0f, 0.5f, 0.0f), (k + 0.5f) / RES, 1, glm::normalize(glm::vec3(cosf(am), 2.0f, sinf(am))));
+		idx.insert(idx.end(), { b, b + 1, b + 2 });
+	}
+	b = (unsigned int)(v.size() / 8);		//base del cono
+	AgregarVerticeSonda(v, glm::vec3(0.0f, -0.5f, 0.0f), 0.5f, 0.5f, glm::vec3(0.0f, -1.0f, 0.0f));
+	for (int k = 0; k <= RES; k++)
+	{
+		ang = 2.0f * PI * k / RES;
+		AgregarVerticeSonda(v, glm::vec3(2.0f * cosf(ang), -0.5f, 2.0f * sinf(ang)), 0.5f + 0.5f * cosf(ang), 0.5f + 0.5f * sinf(ang), glm::vec3(0.0f, -1.0f, 0.0f));
+		if (k > 0) idx.insert(idx.end(), { b, b + k, b + k + 1 });
+	}
+	GuardarPiezaSonda(v, idx);	//meshListModel[10]
+
+	//Pirámide cuadrangular: base de lado 1 en y = -0.5 y punta en (0, 0.5, 0). Cada cara lateral mira hacia su lado
+	//y hacia arriba; su normal es (lado + (0, 0.5, 0)) normalizada
+	const glm::vec3 lados[4] = { {0, 0, 1}, {1, 0, 0}, {0, 0, -1}, {-1, 0, 0} };
+	for (const glm::vec3& d : lados)
+	{
+		glm::vec3 e = glm::cross(glm::vec3(0, 1, 0), d);	//a lo largo de la orilla de la base
+		glm::vec3 n = glm::normalize(d + glm::vec3(0.0f, 0.5f, 0.0f));
+		b = (unsigned int)(v.size() / 8);
+		AgregarVerticeSonda(v, 0.5f * d - 0.5f * e + glm::vec3(0, -0.5f, 0), 0, 0, n);
+		AgregarVerticeSonda(v, 0.5f * d + 0.5f * e + glm::vec3(0, -0.5f, 0), 1, 0, n);
+		AgregarVerticeSonda(v, glm::vec3(0.0f, 0.5f, 0.0f), 0.5f, 1, n);
+		idx.insert(idx.end(), { b, b + 1, b + 2 });
+	}
+	b = (unsigned int)(v.size() / 8);
+	AgregarVerticeSonda(v, glm::vec3(-0.5f, -0.5f, -0.5f), 0, 0, glm::vec3(0, -1, 0));
+	AgregarVerticeSonda(v, glm::vec3(0.5f, -0.5f, -0.5f), 1, 0, glm::vec3(0, -1, 0));
+	AgregarVerticeSonda(v, glm::vec3(0.5f, -0.5f, 0.5f), 1, 1, glm::vec3(0, -1, 0));
+	AgregarVerticeSonda(v, glm::vec3(-0.5f, -0.5f, 0.5f), 0, 1, glm::vec3(0, -1, 0));
+	idx.insert(idx.end(), { b, b + 1, b + 2, b, b + 2, b + 3 });
+	GuardarPiezaSonda(v, idx);	//meshListModel[11]
+
+	//Esfera de radio 1 (las uniones de la práctica 4): en una esfera la normal es la misma posición
+	const int PISOS = 12;
+	for (int i = 0; i <= PISOS; i++)
+	{
+		float fi = PI * i / PISOS;				//de 0 (polo de arriba) a pi
+		for (int k = 0; k <= RES; k++)
+		{
+			ang = 2.0f * PI * k / RES;
+			glm::vec3 p(sinf(fi) * cosf(ang), cosf(fi), sinf(fi) * sinf(ang));
+			AgregarVerticeSonda(v, p, (float)k / RES, 1.0f - (float)i / PISOS, p);
+			if (i > 0 && k > 0)
+			{
+				unsigned int actual = i * (RES + 1) + k, arriba = actual - (RES + 1);
+				idx.insert(idx.end(), { arriba - 1, arriba, actual, arriba - 1, actual, actual - 1 });
+			}
+		}
+	}
+	GuardarPiezaSonda(v, idx);	//meshListModel[12]
+}
+
+
+//Práctica 9: punto del satélite sobre el ocho para el parámetro t y su rumbo. El rumbo sale de la derivada de x y z
+//respecto a t (dx = A·cos t, dz = B·cos 2t), así el frente del satélite (+Z) apunta hacia donde avanza
+void PuntoSatelite(float t, glm::vec3& pos, float& rumbo)
+{
+	pos = CENTRO_SATELITE + glm::vec3(ANCHO_OCHO * sinf(t), ONDA_SATELITE * cosf(t), 0.5f * FONDO_OCHO * sinf(2.0f * t));
+	rumbo = atan2f(ANCHO_OCHO * cosf(t), FONDO_OCHO * cosf(2.0f * t));
+}
+
+
+//Práctica 9: una extremidad del satélite, igual que en la práctica 4: CUERPO -> EXTREMIDAD -> PIERNA -> PIE.
+//esquina es el punto de unión con el cuerpo; aperturaZ y aperturaX son los giros fijos que abren la pata hacia su
+//esquina y articulacion es el giro que antes daba la tecla y ahora sale de la animación
+void DibujarExtremidad(glm::mat4 cuerpo, glm::vec3 esquina, float aperturaZ, float aperturaX, float articulacion,
+	GLuint uniformModel, GLuint uniformColor)
+{
+	glm::mat4 extremidad, model;
+	glm::vec3 color;
+	extremidad = glm::translate(cuerpo, esquina);
+	extremidad = glm::rotate(extremidad, glm::radians(aperturaZ), glm::vec3(0.0f, 0.0f, 1.0f));
+	extremidad = glm::rotate(extremidad, glm::radians(aperturaX), glm::vec3(1.0f, 0.0f, 0.0f));
+	extremidad = glm::rotate(extremidad, glm::radians(articulacion), glm::vec3(1.0f, 0.0f, 0.0f));
+	//unión visible en el eje (esfera azul)
+	model = glm::scale(extremidad, glm::vec3(0.5f));
+	color = glm::vec3(0.2f, 0.4f, 1.0f);
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+	meshListModel[12]->RenderMeshModel();
+	//PIERNA
+	model = glm::translate(extremidad, glm::vec3(0.0f, -0.9f, 0.0f));
+	model = glm::scale(model, glm::vec3(0.25f, 1.8f, 0.25f));
+	color = glm::vec3(0.55f, 0.55f, 0.55f);
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+	meshListModel[9]->RenderMeshModel();
+	//PIE: en el extremo de la pierna, sin heredar su escala
+	model = glm::translate(extremidad, glm::vec3(0.0f, -1.8f, 0.0f));
+	model = glm::scale(model, glm::vec3(0.6f, 0.35f, 0.6f));
+	color = glm::vec3(0.3f, 0.3f, 0.3f);
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+	meshListModel[11]->RenderMeshModel();
+}
+
+
 //------------------------------------------------------------------
 //Capturas para el reporte. Con --capturas lista.txt el programa recorre la lista dentro de
 //la misma ventana (una línea por captura: archivo.ppm y opciones) y luego sigue normal.
 //Opciones: --camara x y z yaw pitch, --rover x, --sentido 1|-1 (rover), --recorrido s (avión), --linterna 0|1,
 //          --puntual con lin exp (luz roja), --spot con lin exp (luz verde fija),
 //          --color 0..5 (luz del avión), --holocron 0|1, --pinza 0|1, --holocronx x, --holocronang grados,
-//          --apertura 0..1 (esquinas del holocrón), --nave 0|1, --motor1 0|1, --motor2 0|1
+//          --apertura 0..1 (esquinas del holocrón), --nave 0|1, --motor1 0|1, --motor2 0|1,
+//          --pista s (nave sobre la pista), --satelite t (parámetro del ocho), --fase f (extremidades, radianes)
 //------------------------------------------------------------------
 struct Captura
 {
@@ -470,6 +811,9 @@ void RestaurarEscena()
 	posRoverX = INICIO_ROVER_X;
 	sentidoRover = 1.0f;
 	recorridoAvion = 0.0f;
+	recorridoNave = 0.0f;
+	anguloSatelite = 0.0f;
+	faseExtremidades = 0.0f;
 	anguloHolocron = 0.0f;
 	aperturaHolocron = 0.0f;
 	pointLights[0] = luzRojaInicial;
@@ -490,6 +834,9 @@ void AplicarOpciones(const std::vector<std::string>& op)
 		else if (op[i] == "--rover" && i + 1 < op.size()) posRoverX = num(++i);
 		else if (op[i] == "--sentido" && i + 1 < op.size()) sentidoRover = num(++i);
 		else if (op[i] == "--recorrido" && i + 1 < op.size()) recorridoAvion = num(++i);
+		else if (op[i] == "--pista" && i + 1 < op.size()) recorridoNave = num(++i);
+		else if (op[i] == "--satelite" && i + 1 < op.size()) anguloSatelite = num(++i);
+		else if (op[i] == "--fase" && i + 1 < op.size()) faseExtremidades = num(++i);
 		else if (op[i] == "--holocronx" && i + 1 < op.size()) mainWindow.setHolocronX(num(++i));
 		else if (op[i] == "--holocronang" && i + 1 < op.size()) anguloHolocron = num(++i);
 		else if (op[i] == "--apertura" && i + 1 < op.size()) aperturaHolocron = num(++i);
@@ -570,9 +917,13 @@ int main(int argc, char** argv)
 	CreateObjects();
 	CrearDado();
 	CrearFuego();
+	CrearPista();
+	CrearPiezasSonda();
 	CreateShaders();
 
-	camera = Camera(glm::vec3(0.0f, 6.0f, 24.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -12.0f, 0.3f, 0.5f);
+	//Práctica 9: la cámara empieza más atrás y más arriba que en el ejercicio, para que al abrir el programa se vean
+	//la pista (detrás de la escena) y el satélite (arriba)
+	camera = Camera(glm::vec3(0.0f, 8.0f, 34.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -3.0f, 0.3f, 0.5f);
 
 	brickTexture = Texture("Textures/brick.png");
 	brickTexture.LoadTextureA();
@@ -588,6 +939,10 @@ int main(int argc, char** argv)
 	fuegoTexture.LoadTextureA();
 	dadoTexture = Texture("Textures/dado_starwars.png");
 	dadoTexture.LoadTextureA();
+	pistaTexture = Texture("Textures/pista.png");
+	pistaTexture.LoadTextureA();
+	muroTexture = Texture("Textures/pista_muro.png");
+	muroTexture.LoadTextureA();
 
 	Blackhawk_M = Model();
 	Blackhawk_M.LoadModel("Models/uh60.obj");
@@ -770,7 +1125,9 @@ int main(int argc, char** argv)
 	glm::vec3 lowerLight, posFaroRover, posLuzPinza;
 	glm::vec3 posAvion, posLuzAvion, posFaroAvion, dirFaroAvion, dirFaroNave;
 	float rumboAvion = 0.0f, inclinacionAvion = 0.0f, giroLlantas = 0.0f, parpadeo = 1.0f;
-	glm::mat4 baseRover(1.0), baseAvion(1.0), baseNave(1.0), baseHolocron(1.0);
+	glm::vec3 posNave, dirNave, posSatelite;
+	float rumboNave = 0.0f, cabeceoNave = 0.0f, inclinacionNave = 0.0f, rumboSatelite = 0.0f;
+	glm::mat4 baseRover(1.0), baseAvion(1.0), baseNave(1.0), baseHolocron(1.0), baseSatelite(1.0), cuerpoSatelite(1.0);
 	glm::mat4 model(1.0), modelaux(1.0);
 	glm::vec3 color(1.0f, 1.0f, 1.0f), signo, diagonal;
 	PointLight puntualesEncendidas[MAX_POINT_LIGHTS];
@@ -813,6 +1170,10 @@ int main(int argc, char** argv)
 			}
 			//Ejercicio 9, avión: solo avanza sobre el circuito; fmod evita que el número crezca sin límite
 			recorridoAvion = fmod(recorridoAvion + VELOCIDAD_AVION * deltaTime, LARGO_CIRCUITO);
+			//Práctica 9: la nave solo avanza sobre la pista; el satélite avanza sobre el ocho y sus extremidades oscilan
+			recorridoNave = fmod(recorridoNave + VELOCIDAD_NAVE * deltaTime, LARGO_PISTA);
+			anguloSatelite = fmod(anguloSatelite + VELOCIDAD_SATELITE * deltaTime, 2.0f * 3.14159265f);
+			faseExtremidades = fmod(faseExtremidades + VELOCIDAD_EXTREMIDADES * deltaTime, 2.0f * 3.14159265f);
 			//giro continuo sobre Y (en las capturas se deja fijo para que la vista no dependa del tiempo)
 			anguloHolocron = fmod(anguloHolocron + 0.5f * deltaTime, 720.0f);
 			//las esquinas se abren y se cierran solas (un ciclo cada ~8 s)
@@ -876,12 +1237,17 @@ int main(int argc, char** argv)
 		dirFaroAvion = glm::normalize(glm::vec3(baseAvion * glm::vec4(0.0f, -0.5f, 1.0f, 0.0f)));
 		spotLights[4].SetFlash(posFaroAvion, dirFaroAvion);
 
-		//Nave: flota subiendo y bajando y se inclina un poco; está girada -90° en Y, así que su frente
-		//apunta hacia -X y las llamas salen hacia +X. Las luces se colocan con su misma matriz
+		//Práctica 9: la nave se coloca en su punto de la pista, un poco arriba de la superficie. Se gira sobre Y con el
+		//rumbo, sobre X con el cabeceo (levanta la nariz en la subida y la baja en la bajada) y sobre Z con la
+		//inclinación de las curvas. Las luces y las llamas se colocan con esta misma matriz
+		PuntoPista(recorridoNave, posNave, dirNave, inclinacionNave);
+		rumboNave = atan2f(dirNave.x, dirNave.z);
+		cabeceoNave = asinf(dirNave.y);
 		baseNave = glm::mat4(1.0);
-		baseNave = glm::translate(baseNave, POS_NAVE + glm::vec3(0.0f, capturando ? 0.0f : 0.3f * sinf(now * 1.2f), 0.0f));
-		baseNave = glm::rotate(baseNave, -90.0f * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-		baseNave = glm::rotate(baseNave, (capturando ? 0.0f : 4.0f * sinf(now * 0.9f)) * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
+		baseNave = glm::translate(baseNave, posNave + glm::vec3(0.0f, ALTURA_NAVE_PISTA, 0.0f));
+		baseNave = glm::rotate(baseNave, rumboNave, glm::vec3(0.0f, 1.0f, 0.0f));
+		baseNave = glm::rotate(baseNave, -cabeceoNave, glm::vec3(1.0f, 0.0f, 0.0f));	//con ángulo negativo +Z sube
+		baseNave = glm::rotate(baseNave, -inclinacionNave * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
 		baseNave = glm::scale(baseNave, glm::vec3(ESCALA_NAVE));
 		pointLights[4].SetPos(glm::vec3(baseNave * glm::vec4(0.0f, 1.1f, 0.3f, 1.0f)));	//sobre la cabina
 		dirFaroNave = glm::normalize(glm::vec3(baseNave * glm::vec4(0.0f, -1.0f, 1.0f, 0.0f)));
@@ -923,6 +1289,14 @@ int main(int argc, char** argv)
 		pisoTexture.UseTexture();
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		meshListModel[2]->RenderMeshModel();
+
+		//Práctica 9: pista de carreras y muros de su parte elevada (los vértices ya están en coordenadas del mundo)
+		model = glm::mat4(1.0);
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		pistaTexture.UseTexture();
+		meshListModel[6]->RenderMeshModel();
+		muroTexture.UseTexture();
+		meshListModel[7]->RenderMeshModel();
 
 		//BLACKHAWK
 		model = glm::mat4(1.0);
@@ -1003,6 +1377,55 @@ int main(int argc, char** argv)
 		Material_brillante.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		dadoTexture.UseTexture();
 		meshListModel[4]->RenderMeshModel();
+
+		//Práctica 9: satélite (sonda espacial de la práctica 4), con la misma jerarquía:
+		//CUERPO -> ANTENA -> PUNTA y CUERPO -> 4 EXTREMIDADES -> PIERNA -> PIE.
+		//baseSatelite lo lleva a su punto del ocho y lo gira con su rumbo; cuerpoSatelite es el pivote de sus hijos
+		PuntoSatelite(anguloSatelite, posSatelite, rumboSatelite);
+		baseSatelite = glm::mat4(1.0);
+		baseSatelite = glm::translate(baseSatelite, posSatelite);
+		baseSatelite = glm::rotate(baseSatelite, rumboSatelite, glm::vec3(0.0f, 1.0f, 0.0f));
+		cuerpoSatelite = glm::scale(baseSatelite, glm::vec3(ESCALA_SATELITE));
+		plainTexture.UseTexture();
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		//CUERPO
+		model = glm::scale(cuerpoSatelite, glm::vec3(3.0f, 2.0f, 3.0f));
+		color = glm::vec3(0.75f, 0.75f, 0.8f);
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		meshListModel[8]->RenderMeshModel();
+		//EJE ANTENA: en el techo del cuerpo, con su unión azul
+		modelaux = glm::translate(cuerpoSatelite, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(modelaux, glm::vec3(0.5f));
+		color = glm::vec3(0.2f, 0.4f, 1.0f);
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		meshListModel[12]->RenderMeshModel();
+		//ANTENA
+		model = glm::translate(modelaux, glm::vec3(0.0f, 0.9f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.25f, 1.8f, 0.25f));
+		color = glm::vec3(0.5f, 0.5f, 0.5f);
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		meshListModel[9]->RenderMeshModel();
+		//PUNTA: sensor en el extremo de la antena, sin heredar la escala de la antena
+		model = glm::translate(modelaux, glm::vec3(0.0f, 1.8f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.4f, 0.6f, 0.4f));
+		color = glm::vec3(1.0f, 0.3f, 0.1f);
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		meshListModel[10]->RenderMeshModel();
+		//EXTREMIDADES: mismas esquinas y aperturas fijas que en la práctica 4. La articulación (antes teclas Q, Z, X
+		//y C) es un seno de la fase; cada extremidad va 90° detrás de la anterior, así el movimiento recorre las
+		//cuatro esquinas: frontal derecha, trasera derecha, trasera izquierda y frontal izquierda
+		DibujarExtremidad(cuerpoSatelite, glm::vec3(1.3f, -0.7f, 1.3f), -35.0f, 35.0f,
+			AMPLITUD_EXTREMIDADES * sinf(faseExtremidades), uniformModel, uniformColor);
+		DibujarExtremidad(cuerpoSatelite, glm::vec3(1.3f, -0.7f, -1.3f), -35.0f, -35.0f,
+			AMPLITUD_EXTREMIDADES * sinf(faseExtremidades - 0.5f * 3.14159265f), uniformModel, uniformColor);
+		DibujarExtremidad(cuerpoSatelite, glm::vec3(-1.3f, -0.7f, -1.3f), 35.0f, -35.0f,
+			AMPLITUD_EXTREMIDADES * sinf(faseExtremidades - 3.14159265f), uniformModel, uniformColor);
+		DibujarExtremidad(cuerpoSatelite, glm::vec3(-1.3f, -0.7f, 1.3f), 35.0f, 35.0f,
+			AMPLITUD_EXTREMIDADES * sinf(faseExtremidades - 1.5f * 3.14159265f), uniformModel, uniformColor);
 
 
 
